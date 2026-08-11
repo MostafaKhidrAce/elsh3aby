@@ -1,0 +1,92 @@
+{
+  "brand": {
+    "name": "أسرة الشعيبي بالأحساء",
+    "nameEn": "AL-Shuaibi Family in Al-Ahsa",
+    "shortName": "Elsh3aby"
+  },
+  "nav": {
+    "home": "Home",
+    "events": "Events",
+    "news": "News",
+    "excellence": "Family Distinction",
+    "store": "Online Store",
+    "contact": "Contact Us",
+    "login": "Log in",
+    "signup": "Sign up",
+    "logout": "Log out",
+    "lang": "EN"
+  },
+  "footer": {
+    "rights": "All rights reserved",
+    "family": "Al-Shuaibi Family in Al-Ahsa"
+  },
+  "home": {
+    "title": "Welcome to the digital platform of the Al-Shuaibi Family in Al-Ahsa",
+    "subtitle": "The official digital platform of the Al-Shuaibi family in Al-Ahsa — bringing family members together, preserving heritage, sharing achievements, organizing events, and strengthening community bonds through modern technology.",
+    "ctaDownload": "Download the mobile app",
+    "ctaJoin": "Join the family platform",
+    "moreThan": "More than",
+    "stats": {
+      "members": "Family members",
+      "events": "Family events",
+      "news": "Published news",
+      "heritage": "Years of heritage"
+    },
+    "aboutSection": {
+      "eyebrow": "About the family",
+      "title": "Everything the family needs in one place",
+      "body": "The Al-Shuaibi family platform is a central digital hub where members can stay connected, take part in events, access family services, discover opportunities, and contribute to the growth of future generations.",
+      "phoneLabel": "Call us at",
+      "phone": "96-6198704300",
+      "emailLabel": "Email us at",
+      "email": "familybox@gmail.com",
+      "cta": "More about us"
+    }
+  },
+  "about": {
+    "title": "About us",
+    "subtitle": "The story of the Elsh3aby family and our shared vision.",
+    "body": "Elsh3aby is a family community that brings relatives and friends together in one place to follow news, occasions, and shared memories. We aim to build a simple, secure platform that keeps everyone connected.",
+    "missionTitle": "Our mission",
+    "missionBody": "Strengthen family communication, preserve heritage, and make it easier to share occasions and everyday moments."
+  },
+  "contact": {
+    "title": "Contact us",
+    "subtitle": "Send us a message and we will get back to you soon.",
+    "name": "Name",
+    "email": "Email",
+    "message": "Message",
+    "submit": "Send",
+    "success": "Your message was sent successfully. Thank you for reaching out."
+  },
+  "auth": {
+    "loginTitle": "Log in",
+    "loginSubtitle": "Welcome back to the Elsh3aby family",
+    "signupTitle": "Create account",
+    "signupSubtitle": "Join the Elsh3aby family",
+    "forgetTitle": "Forgot password",
+    "forgetSubtitle": "Enter your email or phone to receive a verification code",
+    "otpTitle": "Verification code",
+    "otpSubtitle": "Enter the code sent to you to continue",
+    "newPasswordTitle": "New password",
+    "newPasswordSubtitle": "Choose a strong password for your account",
+    "emailOrPhone": "Email or phone",
+    "name": "Full name",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "otp": "Verification code",
+    "login": "Log in",
+    "signup": "Sign up",
+    "sendCode": "Send code",
+    "verify": "Verify",
+    "savePassword": "Save password",
+    "noAccount": "Don't have an account?",
+    "haveAccount": "Already have an account?",
+    "forgotPassword": "Forgot password?",
+    "backToLogin": "Back to log in"
+  },
+  "common": {
+    "loading": "Loading...",
+    "required": "This field is required"
+  }
+}
