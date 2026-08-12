@@ -1,5 +1,6 @@
-import { ContactForm } from "@/components/contact/ContactForm";
-import { HeroNav } from "@/components/layout/HeroNav";
+import { SecondaryHero } from "@/components/about/SecondaryHero";
+import { ContactFormSection } from "@/components/contact/ContactFormSection";
+import { ContactInfoSection } from "@/components/contact/ContactInfoSection";
 import { notFound } from "next/navigation";
 import { isLocale, type Locale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -16,15 +17,22 @@ export default async function ContactUsPage({
   const t = dictionary.contact;
 
   return (
-    <>
-      <HeroNav locale={locale} dictionary={dictionary} variant="solid" />
-      <section className="mx-auto flex max-w-xl flex-col gap-6 px-4 py-10">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{t.title}</h1>
-          <p className="mt-3 text-lg text-muted">{t.subtitle}</p>
-        </div>
-        <ContactForm dictionary={t} />
-      </section>
-    </>
+    <div className="overflow-x-hidden bg-white p-2 sm:p-3 md:p-4 lg:p-6">
+      <SecondaryHero
+        locale={locale}
+        dictionary={dictionary}
+        title={t.heroTitle}
+        breadcrumbHome={t.breadcrumbHome}
+        breadcrumbCurrent={t.breadcrumbCurrent}
+      />
+
+      <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
+        <ContactInfoSection locale={locale} dictionary={dictionary} />
+      </div>
+
+      <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
+        <ContactFormSection locale={locale} dictionary={dictionary} />
+      </div>
+    </div>
   );
 }

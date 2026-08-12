@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useLoginRequired } from "@/components/auth/RouteGuard";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -36,9 +37,17 @@ function useVisibleCount() {
 export function NewsSection({ locale, dictionary }: NewsSectionProps) {
   const t = dictionary.home.newsSection;
   const isAr = locale === "ar";
+  const { isAuthenticated } = useAuth();
+  const { openLoginRequired } = useLoginRequired();
   const visibleCount = useVisibleCount();
   const [index, setIndex] = useState(0);
   const maxIndex = Math.max(0, t.cards.length - visibleCount);
+
+  function handleCardClick() {
+    if (!isAuthenticated) {
+      openLoginRequired();
+    }
+  }
 
   useEffect(() => {
     setIndex((current) => Math.min(current, maxIndex));
@@ -152,10 +161,11 @@ export function NewsSection({ locale, dictionary }: NewsSectionProps) {
                 />
 
                 <div className="absolute inset-x-3 bottom-4 sm:inset-x-4 sm:bottom-6 lg:inset-x-5 lg:bottom-8">
-                  <Link
-                    href={`/${locale}/home#news-section`}
+                  <button
+                    type="button"
                     dir="ltr"
-                    className="flex flex-col gap-3 rounded-[20px] px-3 py-3 backdrop-blur-md sm:gap-4 sm:px-4 sm:py-4"
+                    onClick={handleCardClick}
+                    className="flex w-full flex-col gap-3 rounded-[20px] px-3 py-3 text-start backdrop-blur-md sm:gap-4 sm:px-4 sm:py-4"
                     style={{ backgroundColor: "rgba(0, 0, 0, 0.22)" }}
                   >
                     <span
@@ -184,7 +194,7 @@ export function NewsSection({ locale, dictionary }: NewsSectionProps) {
                         {card.description}
                       </p>
                     </div>
-                  </Link>
+                  </button>
                 </div>
               </article>
             );

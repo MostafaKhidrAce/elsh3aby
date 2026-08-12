@@ -54,7 +54,7 @@ export function HeroNav({
       match: "hash" as const,
     },
     {
-      href: `/${locale}/home#contact-us-section`,
+      href: `/${locale}/home/contact-us`,
       label: t.contact,
       match: "contact" as const,
     },

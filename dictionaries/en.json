@@ -242,7 +242,43 @@
   },
   "contact": {
     "title": "Contact us",
+    "heroTitle": "Contact us",
+    "breadcrumbHome": "Home",
+    "breadcrumbCurrent": "Contact us",
     "subtitle": "Send us a message and we will get back to you soon.",
+    "infoSection": {
+      "eyebrow": "Contact us",
+      "title": "Get in touch",
+      "description": "We are here to answer your questions and provide the support you need. Reach out through the channels below and we will get back to you soon.",
+      "emailLabel": "Email us at",
+      "email": "familybox@gmail.com",
+      "phoneLabel": "Call us on the mobile number",
+      "phone": "96-6198704300",
+      "addressLabel": "Address",
+      "address": "95 Nasser Bin Hawan St, Al Rabwah, Hafar Al-Batin"
+    },
+    "formSection": {
+      "title": "We are happy to hear from you",
+      "description": "Reach out through the form below and we will get back to you as soon as possible",
+      "nameLabel": "Name",
+      "namePlaceholder": "Enter your full name",
+      "phoneLabel": "Mobile number",
+      "phonePlaceholder": "05XXXXXXXX",
+      "countryCode": "(+966)",
+      "messageTypeLabel": "Message type",
+      "messageTypePlaceholder": "Choose message type",
+      "messageTypes": [
+        { "value": "inquiry", "label": "Inquiry" },
+        { "value": "suggestion", "label": "Suggestion" },
+        { "value": "complaint", "label": "Complaint" },
+        { "value": "other", "label": "Other" }
+      ],
+      "messageLabel": "Message details",
+      "messagePlaceholder": "Enter message details",
+      "submit": "Send",
+      "success": "Your message was sent successfully. Thank you for reaching out.",
+      "mapTitle": "Our location on the map"
+    },
     "name": "Name",
     "email": "Email",
     "message": "Message",
@@ -273,7 +309,12 @@
     "noAccount": "Don't have an account?",
     "haveAccount": "Already have an account?",
     "forgotPassword": "Forgot password?",
-    "backToLogin": "Back to log in"
+    "backToLogin": "Back to log in",
+    "loginRequired": {
+      "title": "Unlock the full family experience",
+      "description": "Log in to access exclusive family services and stay connected with the Al-Shuaibi family community.",
+      "login": "Log in"
+    }
   },
   "common": {
     "loading": "Loading...",

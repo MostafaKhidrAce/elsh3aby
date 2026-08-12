@@ -242,7 +242,43 @@
   },
   "contact": {
     "title": "تواصل معنا",
+    "heroTitle": "اتصل بنا",
+    "breadcrumbHome": "الرئيسية",
+    "breadcrumbCurrent": "اتصل بنا",
     "subtitle": "أرسل لنا رسالة وسنعود إليك في أقرب وقت.",
+    "infoSection": {
+      "eyebrow": "اتصل بنا",
+      "title": "تواصل معنا",
+      "description": "نحن هنا للإجابة على استفساراتكم وتقديم الدعم اللازم. تواصلوا معنا عبر القنوات التالية وسنعود إليكم في أقرب وقت.",
+      "emailLabel": "راسلنا عبر البريد الإلكتروني على",
+      "email": "familybox@gmail.com",
+      "phoneLabel": "اتصل بنا على رقم الجوال",
+      "phone": "96-6198704300",
+      "addressLabel": "العنوان",
+      "address": "95 شارع ناصر بن حوان، الربوة، حفر الباطن"
+    },
+    "formSection": {
+      "title": "يسعدنا تواصلك معنا",
+      "description": "تواصل معنا عبر النموذج الموجود بالأسفل وسنقوم بالرد عليك في أقرب وقت ممكن",
+      "nameLabel": "الاسم",
+      "namePlaceholder": "أدخل اسمك رباعي",
+      "phoneLabel": "رقم الجوال",
+      "phonePlaceholder": "05XXXXXXXX",
+      "countryCode": "(+966)",
+      "messageTypeLabel": "نوع الرسالة",
+      "messageTypePlaceholder": "اختر نوع الرسالة",
+      "messageTypes": [
+        { "value": "inquiry", "label": "استفسار" },
+        { "value": "suggestion", "label": "اقتراح" },
+        { "value": "complaint", "label": "شكوى" },
+        { "value": "other", "label": "أخرى" }
+      ],
+      "messageLabel": "تفاصيل الرسالة",
+      "messagePlaceholder": "أدخل تفاصيل الرسالة",
+      "submit": "إرسال",
+      "success": "تم إرسال رسالتك بنجاح. شكراً لتواصلك معنا.",
+      "mapTitle": "موقعنا على الخريطة"
+    },
     "name": "الاسم",
     "email": "البريد الإلكتروني",
     "message": "الرسالة",
@@ -273,7 +309,12 @@
     "noAccount": "ليس لديك حساب؟",
     "haveAccount": "لديك حساب بالفعل؟",
     "forgotPassword": "نسيت كلمة المرور؟",
-    "backToLogin": "العودة لتسجيل الدخول"
+    "backToLogin": "العودة لتسجيل الدخول",
+    "loginRequired": {
+      "title": "أطلق العنان للتجربة العائلية الكاملة",
+      "description": "قم بتسجيل الدخول للوصول إلى الخدمات العائلية الحصرية والبقاء على اتصال مع مجتمع عائلة الشعيبي.",
+      "login": "تسجيل الدخول"
+    }
   },
   "common": {
     "loading": "جاري التحميل...",

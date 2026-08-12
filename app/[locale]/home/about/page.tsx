@@ -19,7 +19,13 @@ export default async function AboutPage({
 
   return (
     <div className="overflow-x-hidden bg-white p-2 sm:p-3 md:p-4 lg:p-6">
-      <SecondaryHero locale={locale} dictionary={dictionary} />
+      <SecondaryHero
+        locale={locale}
+        dictionary={dictionary}
+        title={dictionary.about.heroTitle}
+        breadcrumbHome={dictionary.about.breadcrumbHome}
+        breadcrumbCurrent={dictionary.about.breadcrumbCurrent}
+      />
       <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
         <AboutLineageSection locale={locale} dictionary={dictionary} />
       </div>

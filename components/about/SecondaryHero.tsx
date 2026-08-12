@@ -6,13 +6,20 @@ import type { Locale } from "@/lib/i18n/config";
 type SecondaryHeroProps = {
   locale: Locale;
   dictionary: Dictionary;
+  title: string;
+  breadcrumbHome: string;
+  breadcrumbCurrent: string;
 };
 
 const HERO_BG = "/backgrounds/secondryherosection.svg";
 
-export function SecondaryHero({ locale, dictionary }: SecondaryHeroProps) {
-  const t = dictionary.about;
-
+export function SecondaryHero({
+  locale,
+  dictionary,
+  title,
+  breadcrumbHome,
+  breadcrumbCurrent,
+}: SecondaryHeroProps) {
   return (
     <section className="relative max-w-full overflow-hidden rounded-[1.25rem] text-white sm:rounded-[1.75rem]">
       <div
@@ -26,7 +33,7 @@ export function SecondaryHero({ locale, dictionary }: SecondaryHeroProps) {
 
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-3 pb-6 pt-3 text-center sm:px-5 sm:pb-8 sm:pt-4 lg:px-6 lg:pb-12">
           <h1 className="max-w-full text-[28px] font-bold leading-tight sm:text-[36px] lg:text-[50px]">
-            {t.heroTitle}
+            {title}
           </h1>
           <nav
             aria-label="Breadcrumb"
@@ -38,13 +45,13 @@ export function SecondaryHero({ locale, dictionary }: SecondaryHeroProps) {
                   href={`/${locale}/home`}
                   className="transition hover:text-gold"
                 >
-                  {t.breadcrumbHome}
+                  {breadcrumbHome}
                 </Link>
               </li>
               <li aria-hidden className="opacity-80">
                 /
               </li>
-              <li aria-current="page">{t.breadcrumbCurrent}</li>
+              <li aria-current="page">{breadcrumbCurrent}</li>
             </ol>
           </nav>
         </div>

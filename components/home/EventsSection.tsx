@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { Calendar, MapPin } from "lucide-react";
+import { useLoginRequired } from "@/components/auth/RouteGuard";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -16,6 +17,8 @@ const EVENT_IMAGE = "/dummy%20imgs/home%20page/programs-image-1.jpg.svg";
 export function EventsSection({ locale, dictionary }: EventsSectionProps) {
   const t = dictionary.home.eventsSection;
   const isAr = locale === "ar";
+  const { isAuthenticated } = useAuth();
+  const { openLoginRequired } = useLoginRequired();
 
   return (
     <section
@@ -32,35 +35,38 @@ export function EventsSection({ locale, dictionary }: EventsSectionProps) {
             {t.description}
           </p>
 
-          <Link
-            href={`/${locale}/login`}
-            dir="ltr"
-            className="mt-6 inline-flex w-fit items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-[15px] font-medium text-[#133D3C] transition hover:brightness-105 sm:mt-7 sm:text-[17px] lg:mt-8 lg:px-5 lg:py-3 lg:text-[20px]"
-          >
-            {isAr ? (
-              <>
-                <Image
-                  src="/arrows/green-left-arrow.svg"
-                  alt=""
-                  width={16}
-                  height={16}
-                  className="h-4 w-4"
-                />
-                <span>{t.loginCta}</span>
-              </>
-            ) : (
-              <>
-                <span>{t.loginCta}</span>
-                <Image
-                  src="/arrows/green-left-arrow.svg"
-                  alt=""
-                  width={16}
-                  height={16}
-                  className="h-4 w-4 -scale-x-100"
-                />
-              </>
-            )}
-          </Link>
+          {!isAuthenticated ? (
+            <button
+              type="button"
+              dir="ltr"
+              onClick={openLoginRequired}
+              className="mt-6 inline-flex w-fit items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-[15px] font-medium text-[#133D3C] transition hover:brightness-105 sm:mt-7 sm:text-[17px] lg:mt-8 lg:px-5 lg:py-3 lg:text-[20px]"
+            >
+              {isAr ? (
+                <>
+                  <Image
+                    src="/arrows/green-left-arrow.svg"
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="h-4 w-4"
+                  />
+                  <span>{t.loginCta}</span>
+                </>
+              ) : (
+                <>
+                  <span>{t.loginCta}</span>
+                  <Image
+                    src="/arrows/green-left-arrow.svg"
+                    alt=""
+                    width={16}
+                    height={16}
+                    className="h-4 w-4 -scale-x-100"
+                  />
+                </>
+              )}
+            </button>
+          ) : null}
         </div>
 
         <div className="flex flex-col">

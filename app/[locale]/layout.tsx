@@ -1,7 +1,9 @@
 import localFont from "next/font/local";
 import { notFound } from "next/navigation";
+import { RouteGuard } from "@/components/auth/RouteGuard";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { getDirection, isLocale, type Locale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
 
 const expoArabic = localFont({
   src: [
@@ -54,6 +56,7 @@ export default async function LocaleLayout({
 
   const locale: Locale = localeParam;
   const dir = getDirection(locale);
+  const dictionary = await getDictionary(locale);
 
   return (
     <html
@@ -62,7 +65,11 @@ export default async function LocaleLayout({
       className={`${expoArabic.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans">
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <RouteGuard locale={locale} dictionary={dictionary}>
+            {children}
+          </RouteGuard>
+        </AuthProvider>
       </body>
     </html>
   );

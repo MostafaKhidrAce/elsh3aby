@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { useLoginRequired } from "@/components/auth/RouteGuard";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -15,6 +16,14 @@ const CARD_IMAGE = "/dummy%20imgs/home%20page/dummy-card-img.svg";
 export function ServicesSection({ locale, dictionary }: ServicesSectionProps) {
   const t = dictionary.home.servicesSection;
   const isAr = locale === "ar";
+  const { isAuthenticated } = useAuth();
+  const { openLoginRequired } = useLoginRequired();
+
+  function handleViewMore() {
+    if (!isAuthenticated) {
+      openLoginRequired();
+    }
+  }
 
   return (
     <section id="services-section" className="w-full">
@@ -70,9 +79,10 @@ export function ServicesSection({ locale, dictionary }: ServicesSectionProps) {
                   {card.description}
                 </p>
 
-                <Link
-                  href={`/${locale}/home#services-section`}
+                <button
+                  type="button"
                   dir="ltr"
+                  onClick={handleViewMore}
                   className="mt-3 inline-flex w-fit items-center gap-2 text-[14px] font-medium transition hover:opacity-80 lg:text-[16px]"
                   style={{ color: "#133D3C" }}
                 >
@@ -99,7 +109,7 @@ export function ServicesSection({ locale, dictionary }: ServicesSectionProps) {
                       />
                     </>
                   )}
-                </Link>
+                </button>
               </article>
             ))}
           </div>
