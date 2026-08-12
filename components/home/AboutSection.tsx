@@ -20,7 +20,7 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
       id="about-section"
       className="relative overflow-hidden rounded-[1.25rem] bg-white sm:rounded-[1.75rem]"
     >
-      <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-10 px-4 py-12 sm:px-6 sm:py-16 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-20 xl:max-w-[1400px] xl:gap-20 xl:px-16">
+      <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-6 px-3 py-8 sm:gap-8 sm:px-5 sm:py-12 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-20 xl:max-w-[1400px] xl:gap-20 xl:px-16">
         <div className={`order-1 ${isAr ? "lg:order-2" : "lg:order-1"}`}>
           <Image
             src="/backgrounds/about-section-bg.svg"
@@ -37,24 +37,26 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
             isAr ? "lg:order-1 text-start" : "lg:order-2 text-start"
           }`}
         >
-          <p className="text-base font-medium text-green-dark">{t.eyebrow}</p>
-          <h2 className="mt-3 max-w-2xl text-3xl font-bold leading-snug text-green-dark sm:text-4xl lg:text-[2.75rem] lg:leading-[1.25]">
+          <p className="text-sm font-medium text-green-dark lg:text-base">
+            {t.eyebrow}
+          </p>
+          <h2 className="mt-2 max-w-2xl text-2xl font-bold leading-snug text-green-dark sm:mt-3 sm:text-3xl lg:text-[2.75rem] lg:leading-[1.25]">
             {t.title}
           </h2>
-          <p className="mt-5 max-w-2xl text-base font-medium leading-8 text-muted sm:text-lg sm:leading-9">
+          <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-muted sm:mt-4 sm:text-base sm:leading-8 lg:mt-5 lg:text-lg lg:leading-9">
             {t.body}
           </p>
 
-          <div className="mt-8 flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:items-start sm:gap-8">
+          <div className="mt-6 flex flex-col gap-4 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-start sm:gap-6 lg:mt-8 lg:gap-8">
             <div className="flex items-center gap-3">
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-green-dark/25 text-green-dark">
-                <Mail className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-dark/25 text-green-dark lg:h-12 lg:w-12">
+                <Mail className="h-4 w-4 lg:h-5 lg:w-5" strokeWidth={1.75} aria-hidden />
               </span>
               <div>
-                <p className="text-sm text-muted">{t.emailLabel}</p>
+                <p className="text-xs text-muted sm:text-sm">{t.emailLabel}</p>
                 <a
                   href={`mailto:${t.email}`}
-                  className="text-base font-bold text-green-dark hover:text-gold"
+                  className="text-sm font-bold text-green-dark hover:text-gold lg:text-base"
                 >
                   {t.email}
                 </a>
@@ -62,14 +64,14 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-green-dark/25 text-green-dark">
-                <Phone className="h-5 w-5" strokeWidth={1.75} aria-hidden />
+              <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-green-dark/25 text-green-dark lg:h-12 lg:w-12">
+                <Phone className="h-4 w-4 lg:h-5 lg:w-5" strokeWidth={1.75} aria-hidden />
               </span>
               <div>
-                <p className="text-sm text-muted">{t.phoneLabel}</p>
+                <p className="text-xs text-muted sm:text-sm">{t.phoneLabel}</p>
                 <a
                   href={`tel:${t.phone.replace(/-/g, "")}`}
-                  className="text-base font-bold text-green-dark hover:text-gold"
+                  className="text-sm font-bold text-green-dark hover:text-gold lg:text-base"
                   dir="ltr"
                 >
                   {t.phone}
@@ -78,11 +80,11 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
             </div>
           </div>
 
-          <div className="mt-8">
+          <div className="mt-6 lg:mt-8">
             <Link
               href={`/${locale}/home/about`}
               dir="ltr"
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-gold px-5 py-3 text-sm font-semibold text-green-dark transition hover:brightness-105"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-sm font-semibold text-green-dark transition hover:brightness-105 lg:px-5 lg:py-3"
             >
               {isAr ? (
                 <>

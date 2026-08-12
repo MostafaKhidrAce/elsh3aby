@@ -94,21 +94,21 @@ export function HomeHero({ locale, dictionary }: HomeHeroProps) {
         <div className="relative z-10 flex min-h-[min(100vh,920px)] flex-col">
           <HeroNav locale={locale} dictionary={dictionary} />
 
-          <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-4 pb-6 pt-10 text-center sm:px-6 sm:pt-14">
-            <h1 className="max-w-4xl text-3xl font-bold leading-snug sm:text-4xl md:text-5xl lg:text-[3.25rem]">
+          <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-3 pb-5 pt-8 text-center sm:px-5 sm:pt-10 lg:px-6 lg:pb-6 lg:pt-14">
+            <h1 className="max-w-4xl text-2xl font-bold leading-snug sm:text-3xl md:text-4xl lg:text-[3.25rem]">
               {t.title}
             </h1>
-            <p className="mt-5 max-w-3xl text-sm leading-7 text-white/90 sm:text-base md:text-lg md:leading-8">
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-white/90 sm:mt-4 sm:text-base sm:leading-7 lg:mt-5 lg:text-lg lg:leading-8">
               {t.subtitle}
             </p>
 
-            <div className="mt-8 flex flex-col items-stretch gap-3 sm:mt-10 sm:flex-row sm:items-center sm:justify-center">
+            <div className="mt-6 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-center lg:mt-10">
               <a
                 href="https://example.com/app-download"
                 target="_blank"
                 rel="noopener noreferrer"
                 dir="ltr"
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-gold px-5 py-3 text-sm font-semibold text-green-dark transition hover:brightness-105"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-sm font-semibold text-green-dark transition hover:brightness-105 lg:px-5 lg:py-3"
               >
                 <CtaContent
                   locale={locale}
@@ -119,7 +119,7 @@ export function HomeHero({ locale, dictionary }: HomeHeroProps) {
               <Link
                 href={`/${locale}/signup`}
                 dir="ltr"
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-white/80 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-white/80 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 lg:px-5 lg:py-3"
               >
                 <CtaContent
                   locale={locale}
@@ -129,7 +129,7 @@ export function HomeHero({ locale, dictionary }: HomeHeroProps) {
               </Link>
             </div>
 
-            <div className="mt-12 grid w-full grid-cols-2 gap-3 sm:mt-16 sm:grid-cols-4 sm:gap-5">
+            <div className="mt-8 grid w-full grid-cols-2 gap-2.5 sm:mt-12 sm:grid-cols-4 sm:gap-4 lg:mt-16 lg:gap-5">
               {STATS.map((stat) => (
                 <AnimatedStat
                   key={stat.key}
@@ -142,7 +142,7 @@ export function HomeHero({ locale, dictionary }: HomeHeroProps) {
 
             <a
               href="#after-hero"
-              className="mt-10 inline-flex h-12 w-7 items-center justify-center rounded-full border border-white/70 transition hover:bg-white/10"
+              className="mt-8 inline-flex h-10 w-6 items-center justify-center rounded-full border border-white/70 transition hover:bg-white/10 lg:mt-10 lg:h-12 lg:w-7"
               aria-label="Scroll down"
             >
               <Image

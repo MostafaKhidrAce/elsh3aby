@@ -18,7 +18,7 @@ export default async function HomeLayout({
   return (
     <div className="flex min-h-full flex-1 flex-col bg-white">
       {children}
-      <PublicFooter dictionary={dictionary} />
+      <PublicFooter locale={locale} dictionary={dictionary} />
     </div>
   );
 }

@@ -17,7 +17,27 @@
     "lang": "EN"
   },
   "footer": {
-    "rights": "All rights reserved",
+    "title": "Al-Shuaibi Family in Al-Ahsa",
+    "contactCta": "Contact us",
+    "newsletterTitle": "Subscribe to our newsletter",
+    "newsletterDesc": "We share important news and updates about the family",
+    "newsletterPlaceholder": "Enter your email address",
+    "newsletterSubmit": "Send",
+    "addressTitle": "Address information",
+    "address": "95 Nasser Bin Hawan St, Al Rabwah, Hafar Al-Batin",
+    "menuTitle": "Main menu",
+    "menu": {
+      "news": "Family news",
+      "events": "Events and occasions",
+      "store": "Al-Qaisariyah market",
+      "booking": "Book the family events hall"
+    },
+    "contactTitle": "Contact information",
+    "phoneLabel": "Mobile number",
+    "phone": "966198704300",
+    "emailLabel": "Email",
+    "email": "familybox@gmail.com",
+    "rights": "All rights reserved © 2026 Aks Information Technology & Marketing",
     "family": "Al-Shuaibi Family in Al-Ahsa"
   },
   "home": {
@@ -41,6 +61,105 @@
       "emailLabel": "Email us at",
       "email": "familybox@gmail.com",
       "cta": "More about us"
+    },
+    "servicesSection": {
+      "title": "Platform services",
+      "subtitle": "Explore family services",
+      "description": "An integrated portal that meets the family's aspirations, supports its excellence, documents its achievements, and enables you to manage your affairs and participate actively in all activities",
+      "viewMore": "View more",
+      "cards": [
+        {
+          "title": "Family suggestions",
+          "description": "Explore family leadership, council members, and board representatives, and share your ideas to improve family services and community initiatives."
+        },
+        {
+          "title": "Administrative council members",
+          "description": "Explore family leadership, council members, and board representatives, and learn about their roles and contributions to serving the Al-Shuaibi family."
+        },
+        {
+          "title": "Family excellence",
+          "description": "Honoring distinguished family members in education, scientific research, and community work, and highlighting their achievements across generations."
+        },
+        {
+          "title": "Qaisariyah market",
+          "description": "Shop products, discover discounts, and support the family fund through an online market featuring selected offers for family members."
+        },
+        {
+          "title": "Family library",
+          "description": "Browse books, research, novels, religious publications, and family heritage documents in an easy-to-access digital library."
+        },
+        {
+          "title": "Family venue booking",
+          "description": "Your gateway to booking the official family venue for meetings, special occasions, and gatherings with ease and flexible organization."
+        }
+      ]
+    },
+    "eventsSection": {
+      "title": "Events and occasions",
+      "description": "Stay up to date with upcoming events, celebrations, and meetings held throughout the year.",
+      "loginCta": "Log in for more details",
+      "events": [
+        {
+          "title": "Wedding celebrations",
+          "description": "Join us for family wedding celebrations that bring relatives and loved ones together in joy and connection.",
+          "date": "12-07-2026",
+          "location": "4 Mahmoud El-Einy St, Al-Shimisi, Taif"
+        },
+        {
+          "title": "Wedding celebrations",
+          "description": "Join us for family wedding celebrations that bring relatives and loved ones together in joy and connection.",
+          "date": "12-07-2026",
+          "location": "4 Mahmoud El-Einy St, Al-Shimisi, Taif"
+        },
+        {
+          "title": "Wedding celebrations",
+          "description": "Join us for family wedding celebrations that bring relatives and loved ones together in joy and connection.",
+          "date": "12-07-2026",
+          "location": "4 Mahmoud El-Einy St, Al-Shimisi, Taif"
+        }
+      ]
+    },
+    "newsSection": {
+      "title": "Family news",
+      "subtitle": "Family news and announcements",
+      "description": "Follow the latest family updates, official announcements, and community initiatives as they happen.",
+      "cards": [
+        {
+          "title": "Annual family gathering",
+          "description": "Details about the annual gathering, registration dates, and how to take part."
+        },
+        {
+          "title": "Board announcement",
+          "description": "The latest board decisions and upcoming family programs."
+        },
+        {
+          "title": "Family occasion",
+          "description": "Coverage of recent highlights and family celebrations."
+        },
+        {
+          "title": "Community initiative",
+          "description": "New initiatives to support family members and strengthen bonds."
+        },
+        {
+          "title": "Platform update",
+          "description": "New features on the Al-Shuaibi family digital platform."
+        },
+        {
+          "title": "Family congratulations",
+          "description": "Happy occasions and congratulations shared by family members."
+        }
+      ]
+    },
+    "contactSection": {
+      "title": "Join the digital family experience",
+      "description": "Join a connected community where family members collaborate and share achievements.",
+      "firstName": "First name",
+      "lastName": "Family name",
+      "email": "Email",
+      "phone": "Phone",
+      "message": "Write a message...",
+      "submit": "Send message",
+      "success": "Your message was sent successfully. Thank you for reaching out."
     }
   },
   "about": {
