@@ -12,7 +12,5 @@ export default async function SignupPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return (
-    <SignupForm dictionary={dictionary} brandName={dictionary.brand.name} />
-  );
+  return <SignupForm dictionary={dictionary} />;
 }

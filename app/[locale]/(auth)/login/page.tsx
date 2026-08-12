@@ -12,7 +12,5 @@ export default async function LoginPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return (
-    <LoginForm dictionary={dictionary} brandName={dictionary.brand.name} />
-  );
+  return <LoginForm dictionary={dictionary} />;
 }

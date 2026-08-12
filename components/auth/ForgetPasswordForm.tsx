@@ -9,13 +9,9 @@ import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
 type ForgetPasswordFormProps = {
   dictionary: Dictionary;
-  brandName: string;
 };
 
-export function ForgetPasswordForm({
-  dictionary,
-  brandName,
-}: ForgetPasswordFormProps) {
+export function ForgetPasswordForm({ dictionary }: ForgetPasswordFormProps) {
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as Locale;
@@ -33,7 +29,6 @@ export function ForgetPasswordForm({
       locale={locale}
       title={t.forgetTitle}
       subtitle={t.forgetSubtitle}
-      brandName={brandName}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-sm">

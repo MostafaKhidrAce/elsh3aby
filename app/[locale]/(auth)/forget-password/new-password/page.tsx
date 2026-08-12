@@ -12,10 +12,5 @@ export default async function NewPasswordPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return (
-    <NewPasswordForm
-      dictionary={dictionary}
-      brandName={dictionary.brand.name}
-    />
-  );
+  return <NewPasswordForm dictionary={dictionary} />;
 }

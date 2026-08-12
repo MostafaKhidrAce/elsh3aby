@@ -14,8 +14,14 @@ export default async function OtpPage({
   const dictionary = await getDictionary(localeParam);
 
   return (
-    <Suspense fallback={<div className="p-8 text-center text-muted">{dictionary.common.loading}</div>}>
-      <OtpForm dictionary={dictionary} brandName={dictionary.brand.name} />
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-muted">
+          {dictionary.common.loading}
+        </div>
+      }
+    >
+      <OtpForm dictionary={dictionary} />
     </Suspense>
   );
 }

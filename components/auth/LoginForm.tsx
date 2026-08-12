@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
+import { Lock, Mail } from "lucide-react";
 import { AuthFormShell } from "@/components/auth/AuthFormShell";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Locale } from "@/lib/i18n/config";
@@ -10,23 +12,37 @@ import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
 type LoginFormProps = {
   dictionary: Dictionary;
-  brandName: string;
 };
 
-export function LoginForm({ dictionary, brandName }: LoginFormProps) {
+const TEXT = "#170F49";
+const GOLD = "#D5AF34";
+const BORDER = "#D5AF34";
+const INPUT_SHADOW = "0px 2px 6px 0px rgba(74, 58, 255, 0.1)";
+
+const inputClassName =
+  "h-12 w-full rounded-[12px] border border-[#D5AF34] bg-white text-[14px] font-medium outline-none transition placeholder:font-normal placeholder:text-[#9CA3AF] sm:h-14 sm:text-[15px]";
+
+const inputStyle = {
+  borderColor: BORDER,
+  color: TEXT,
+  boxShadow: INPUT_SHADOW,
+} as const;
+
+export function LoginForm({ dictionary }: LoginFormProps) {
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as Locale;
+  const isAr = locale === "ar";
   const { login } = useAuth();
   const t = dictionary.auth;
-  const [emailOrPhone, setEmailOrPhone] = useState("");
+  const [nationalId, setNationalId] = useState("");
   const [password, setPassword] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     login({
-      name: emailOrPhone.split("@")[0] || emailOrPhone,
-      emailOrPhone,
+      name: nationalId,
+      emailOrPhone: nationalId,
     });
     router.push(`/${locale}/home`);
   }
@@ -36,46 +52,102 @@ export function LoginForm({ dictionary, brandName }: LoginFormProps) {
       locale={locale}
       title={t.loginTitle}
       subtitle={t.loginSubtitle}
-      brandName={brandName}
     >
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">{t.emailOrPhone}</span>
-          <input
-            value={emailOrPhone}
-            onChange={(e) => setEmailOrPhone(e.target.value)}
-            required
-            className="rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-brand"
-          />
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:gap-5">
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[14px] font-bold" style={{ color: TEXT }}>
+            {t.nationalId}
+          </span>
+          <div className="relative">
+            <Mail
+              className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-[#9CA3AF]"
+              strokeWidth={1.75}
+            />
+            <input
+              value={nationalId}
+              onChange={(e) => setNationalId(e.target.value)}
+              required
+              inputMode="numeric"
+              placeholder={t.nationalIdPlaceholder}
+              dir="ltr"
+              className={`${inputClassName} pl-12 pr-4 ${
+                isAr ? "text-right" : "text-left"
+              }`}
+              style={inputStyle}
+            />
+          </div>
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">{t.password}</span>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="rounded-lg border border-border bg-background px-3 py-2 outline-none focus:border-brand"
-          />
+
+        <label className="flex flex-col gap-1.5">
+          <span className="text-[14px] font-bold" style={{ color: TEXT }}>
+            {t.password}
+          </span>
+          <div className="relative">
+            <Lock
+              className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-[#9CA3AF]"
+              strokeWidth={1.75}
+            />
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder={t.passwordPlaceholder}
+              className={`${inputClassName} pl-12 pr-4`}
+              style={inputStyle}
+            />
+          </div>
         </label>
-        <div className="text-end">
+
+        <div className={isAr ? "text-start" : "text-end"}>
           <Link
             href={`/${locale}/forget-password`}
-            className="text-sm text-brand hover:underline"
+            className="text-[13px] font-medium hover:underline sm:text-[14px]"
+            style={{ color: TEXT }}
           >
             {t.forgotPassword}
           </Link>
         </div>
+
         <button
           type="submit"
-          className="rounded-lg bg-brand px-5 py-2.5 text-sm font-medium text-white hover:opacity-90"
+          dir="ltr"
+          className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[15px] font-bold transition hover:brightness-105 sm:h-14 sm:text-[16px]"
+          style={{ backgroundColor: GOLD, color: TEXT }}
         >
-          {t.login}
+          {isAr ? (
+            <>
+              <Image
+                src="/arrows/green-left-arrow.svg"
+                alt=""
+                width={16}
+                height={16}
+                className="h-4 w-4"
+              />
+              <span>{t.login}</span>
+            </>
+          ) : (
+            <>
+              <span>{t.login}</span>
+              <Image
+                src="/arrows/green-left-arrow.svg"
+                alt=""
+                width={16}
+                height={16}
+                className="h-4 w-4 -scale-x-100"
+              />
+            </>
+          )}
         </button>
-        <p className="text-center text-sm text-muted">
+
+        <p className="text-center text-[13px] sm:text-[14px]" style={{ color: TEXT }}>
           {t.noAccount}{" "}
-          <Link href={`/${locale}/signup`} className="font-medium text-brand hover:underline">
-            {t.signup}
+          <Link
+            href={`/${locale}/signup`}
+            className="font-bold hover:underline"
+            style={{ color: "#133D3C" }}
+          >
+            {t.registerNow}
           </Link>
         </p>
       </form>

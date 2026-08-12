@@ -9,13 +9,9 @@ import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
 type NewPasswordFormProps = {
   dictionary: Dictionary;
-  brandName: string;
 };
 
-export function NewPasswordForm({
-  dictionary,
-  brandName,
-}: NewPasswordFormProps) {
+export function NewPasswordForm({ dictionary }: NewPasswordFormProps) {
   const router = useRouter();
   const params = useParams();
   const locale = params.locale as Locale;
@@ -39,7 +35,6 @@ export function NewPasswordForm({
       locale={locale}
       title={t.newPasswordTitle}
       subtitle={t.newPasswordSubtitle}
-      brandName={brandName}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-sm">

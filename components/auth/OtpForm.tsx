@@ -9,10 +9,9 @@ import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
 type OtpFormProps = {
   dictionary: Dictionary;
-  brandName: string;
 };
 
-export function OtpForm({ dictionary, brandName }: OtpFormProps) {
+export function OtpForm({ dictionary }: OtpFormProps) {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -32,7 +31,6 @@ export function OtpForm({ dictionary, brandName }: OtpFormProps) {
       locale={locale}
       title={t.otpTitle}
       subtitle={t.otpSubtitle}
-      brandName={brandName}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <label className="flex flex-col gap-1.5 text-sm">

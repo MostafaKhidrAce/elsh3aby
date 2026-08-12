@@ -12,10 +12,5 @@ export default async function ForgetPasswordPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return (
-    <ForgetPasswordForm
-      dictionary={dictionary}
-      brandName={dictionary.brand.name}
-    />
-  );
+  return <ForgetPasswordForm dictionary={dictionary} />;
 }
