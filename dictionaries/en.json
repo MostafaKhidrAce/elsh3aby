@@ -164,6 +164,77 @@
   },
   "about": {
     "title": "About us",
+    "heroTitle": "Family lineage",
+    "breadcrumbHome": "Home",
+    "breadcrumbCurrent": "Family lineage",
+    "lineageSection": {
+      "eyebrow": "Family lineage",
+      "title": "Lineage of the Al-Shuaibi family in Al-Ahsa",
+      "body": [
+        "The Al-Shuaibi family platform is a central digital hub where members can stay connected, take part in events, access family services, discover opportunities, and contribute to the growth of future generations.",
+        "The Al-Shuaibi family platform is a central digital hub where members can stay connected, take part in events, access family services, discover opportunities, and contribute to the growth of future generations."
+      ]
+    },
+    "statsSection": {
+      "eyebrow": "Quick family statistics",
+      "title": "Our family.. a bond that grows and giving that extends",
+      "description": "We share the numbers that reflect the size of our family, the strength of its bonds across generations, and the ongoing journey of good represented by our blessed endowments.",
+      "stats": {
+        "total": "Total family members",
+        "males": "Male family members",
+        "females": "Female family members",
+        "endowments": "Number of endowments"
+      }
+    },
+    "goalsSection": {
+      "title": "What the platform aims for",
+      "subtitle": "One platform. Family bonds that never end.",
+      "description": "The Al-Shuaibi family platform was designed to make communication, participation, and interaction easier for all family members. Whether you are looking for family news, upcoming events, leadership information, educational achievements, or job opportunities — everything is available through one trusted digital system.",
+      "points": [
+        "Follow family news, announcements, and celebrations",
+        "Stay up to date with family meetings, gatherings, and events.",
+        "Stay up to date with family meetings, gatherings, and events.",
+        "Explore family publications, books, and contributions",
+        "Discover achievements and success stories of your family members"
+      ]
+    },
+    "faqSection": {
+      "title": "Frequently asked questions",
+      "items": [
+        {
+          "question": "How can I join the platform?",
+          "answer": "You can join by creating a new account on the sign-up page, then completing your details to access family services and content."
+        },
+        {
+          "question": "What is the Family Excellence section?",
+          "answer": "It is a dedicated space to showcase outstanding family members, academic achievements, professional accomplishments, research contributions, and community impact."
+        },
+        {
+          "question": "What can I find on the platform?",
+          "answer": "You will find family news, events, announcements, services, Al-Qaisariyah market, family excellence content, and more tools that connect family members."
+        },
+        {
+          "question": "How can I stay updated on upcoming family events?",
+          "answer": "You can follow the Events section inside the platform and subscribe to the newsletter to receive updates as they happen."
+        },
+        {
+          "question": "Can visitors browse the platform without registering?",
+          "answer": "Yes, visitors can view some public pages, while certain services and details require signing in."
+        },
+        {
+          "question": "What is Al-Qaisariyah market?",
+          "answer": "Al-Qaisariyah is an online market where family members can explore products and offers and support the family fund through one platform."
+        },
+        {
+          "question": "How can I contact the academy for private training?",
+          "answer": "You can reach out through the Contact us form or the contact details available on the platform to request private training or ask about programs."
+        },
+        {
+          "question": "Are family elections managed through the platform?",
+          "answer": "Yes, the platform provides digital tools that help manage family election processes and organize participation easily and securely."
+        }
+      ]
+    },
     "subtitle": "The story of the Elsh3aby family and our shared vision.",
     "body": "Elsh3aby is a family community that brings relatives and friends together in one place to follow news, occasions, and shared memories. We aim to build a simple, secure platform that keeps everyone connected.",
     "missionTitle": "Our mission",

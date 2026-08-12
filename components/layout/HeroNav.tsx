@@ -182,8 +182,9 @@ export function HeroNav({
                 key={link.label}
                 href={link.href}
                 className={`text-sm font-medium transition-colors ${
-                  highlighted ? "text-gold" : "text-white/90 hover:text-gold"
+                  highlighted ? "" : "text-white/90 hover:text-[#D5AF34]"
                 }`}
+                style={highlighted ? { color: "#D5AF34" } : undefined}
               >
                 {link.label}
               </Link>
@@ -254,10 +255,9 @@ export function HeroNav({
                     href={link.href}
                     onClick={closeDrawer}
                     className={`rounded-md px-3 py-3 text-base font-medium transition ${
-                      highlighted
-                        ? "bg-white/10 text-gold"
-                        : "text-white hover:bg-white/5"
+                      highlighted ? "bg-white/10" : "text-white hover:bg-white/5"
                     }`}
+                    style={highlighted ? { color: "#D5AF34" } : undefined}
                   >
                     {link.label}
                   </Link>
