@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { UserMenu } from "@/components/layout/UserMenu";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -23,7 +24,7 @@ export function HeroNav({
   variant = "hero",
 }: HeroNavProps) {
   const pathname = usePathname();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [open, setOpen] = useState(false);
   const t = dictionary.nav;
   const isAr = locale === "ar";
@@ -110,16 +111,11 @@ export function HeroNav({
   );
 
   const authAction = isAuthenticated ? (
-    <button
-      type="button"
-      onClick={() => {
-        logout();
-        closeDrawer();
-      }}
-      className="inline-flex items-center gap-2 rounded-md bg-gold px-3 py-2 text-sm font-semibold text-green-dark"
-    >
-      <span>{t.logout}</span>
-    </button>
+    <UserMenu
+      locale={locale}
+      dictionary={dictionary}
+      onNavigate={closeDrawer}
+    />
   ) : (
     <Link
       href={`/${locale}/login`}
@@ -255,7 +251,9 @@ export function HeroNav({
                     href={link.href}
                     onClick={closeDrawer}
                     className={`rounded-md px-3 py-3 text-base font-medium transition ${
-                      highlighted ? "bg-white/10" : "text-white hover:bg-white/5"
+                      highlighted
+                        ? "bg-white/10"
+                        : "text-white hover:bg-white/5"
                     }`}
                     style={highlighted ? { color: "#D5AF34" } : undefined}
                   >

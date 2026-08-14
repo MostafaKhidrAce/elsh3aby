@@ -37,12 +37,14 @@ export function LoginForm({ dictionary }: LoginFormProps) {
   const t = dictionary.auth;
   const [nationalId, setNationalId] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     login({
-      name: nationalId,
+      name: dictionary.nav.defaultMemberName,
       emailOrPhone: nationalId,
+      avatarUrl: null,
     });
     router.push(`/${locale}/home`);
   }
@@ -83,12 +85,16 @@ export function LoginForm({ dictionary }: LoginFormProps) {
             {t.password}
           </span>
           <div className="relative">
-            <Lock
-              className="pointer-events-none absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-[#9CA3AF]"
-              strokeWidth={1.75}
-            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute top-1/2 left-3 z-10 -translate-y-1/2 p-1 text-[#9CA3AF] hover:text-[#170F49]"
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              <Lock className="h-5 w-5" strokeWidth={1.75} />
+            </button>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

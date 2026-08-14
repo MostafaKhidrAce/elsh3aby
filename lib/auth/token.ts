@@ -4,6 +4,7 @@ const USER_KEY = "elsh3aby_user";
 export type AuthUser = {
   name: string;
   emailOrPhone: string;
+  avatarUrl?: string | null;
 };
 
 export function getToken(): string | null {
