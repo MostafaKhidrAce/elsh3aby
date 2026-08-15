@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Bell, MapPin, Clock } from "lucide-react";
 import type { DummyEvent } from "@/lib/dashboard/dummy-events";
 import type { Locale } from "@/lib/i18n/config";
@@ -33,30 +34,39 @@ export function EventCard({
   const location = isAr ? event.location : event.locationEn;
   const publisher = isAr ? event.publisherName : event.publisherNameEn;
   const branch = isAr ? event.branch : event.branchEn;
+  const href = `/${locale}/dashboard/events/${event.id}`;
 
   return (
     <article className="flex h-full flex-col rounded-[18px] border border-[#EAEAEA] bg-white p-5 shadow-[0_2px_12px_rgba(25,33,61,0.04)] sm:p-6">
-      <h3 className="text-[17px] font-bold leading-snug text-[#170F49] sm:text-[18px]">
-        {title}
-      </h3>
-
-      <p className="mt-2 line-clamp-2 text-[13px] leading-6 text-[#8B8B9A]">
-        {description}
-      </p>
-
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-[13px] text-[#5C5C6B]">
-        <div className="flex min-w-0 items-center gap-1.5">
-          <MapPin className="h-4 w-4 shrink-0" style={{ color: GOLD }} strokeWidth={2} />
-          <span className="truncate">{location}</span>
+      <Link href={href} className="block space-y-2 transition hover:opacity-90">
+        <h3 className="text-[17px] font-bold leading-snug text-[#170F49] sm:text-[18px]">
+          {title}
+        </h3>
+        <p className="line-clamp-2 text-[13px] leading-6 text-[#8B8B9A]">
+          {description}
+        </p>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-2 text-[13px] text-[#5C5C6B]">
+          <div className="flex min-w-0 items-center gap-1.5">
+            <MapPin
+              className="h-4 w-4 shrink-0"
+              style={{ color: GOLD }}
+              strokeWidth={2}
+            />
+            <span className="truncate">{location}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Clock
+              className="h-4 w-4 shrink-0"
+              style={{ color: GOLD }}
+              strokeWidth={2}
+            />
+            <span className="whitespace-nowrap">{event.time}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5">
-          <Clock className="h-4 w-4 shrink-0" style={{ color: GOLD }} strokeWidth={2} />
-          <span className="whitespace-nowrap">{event.time}</span>
-        </div>
-      </div>
+      </Link>
 
       <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-5">
-        <div className="flex min-w-0 items-center gap-2.5">
+        <Link href={href} className="flex min-w-0 items-center gap-2.5">
           <Image
             src={PLACEHOLDER_AVATAR}
             alt=""
@@ -73,7 +83,7 @@ export function EventCard({
               </span>
             ) : null}
           </div>
-        </div>
+        </Link>
 
         <button
           type="button"

@@ -42,7 +42,7 @@ type NavItem = {
   key: NavLabelKey;
   href: string;
   icon: LucideIcon;
-  match: string;
+  match: string | string[];
 };
 
 export function DashboardSidebar({
@@ -61,7 +61,7 @@ export function DashboardSidebar({
       key: "events",
       href: `/${locale}/dashboard/events`,
       icon: CalendarDays,
-      match: "/dashboard/events",
+      match: ["/dashboard/events", "/dashboard/add-event"],
     },
     {
       key: "news",
@@ -119,8 +119,9 @@ export function DashboardSidebar({
     },
   ];
 
-  function isActive(match: string) {
-    return pathname.includes(match);
+  function isActive(match: string | string[]) {
+    const patterns = Array.isArray(match) ? match : [match];
+    return patterns.some((pattern) => pathname.includes(pattern));
   }
 
   function handleLogout() {

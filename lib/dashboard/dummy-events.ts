@@ -1,5 +1,16 @@
 export type EventCategoryId = "wedding" | "meetings";
 
+export type DummyEventComment = {
+  id: string;
+  author: string;
+  authorEn: string;
+  dateLabel: string;
+  dateLabelEn: string;
+  text: string;
+  textEn: string;
+  images: string[];
+};
+
 export type DummyEvent = {
   id: string;
   category: EventCategoryId;
@@ -15,6 +26,15 @@ export type DummyEvent = {
   branch?: string;
   branchEn?: string;
   dateKey: string;
+  images: string[];
+  detailTitle: string;
+  detailTitleEn: string;
+  detailDescription: string;
+  detailDescriptionEn: string;
+  address: string;
+  addressEn: string;
+  mapEmbedUrl?: string;
+  comments: DummyEventComment[];
 };
 
 function pad(n: number) {
@@ -59,8 +79,89 @@ const TOMORROW_KEY = offsetDateKey(TODAY, 1);
 const PLUS_2 = offsetDateKey(TODAY, 2);
 const PLUS_3 = offsetDateKey(TODAY, 3);
 
-export const DUMMY_EVENTS: DummyEvent[] = [
+const VENUE_IMAGES = [
+  "https://images.unsplash.com/photo-1519167758481-83f29da8c2b4?w=1200&q=80",
+  "https://images.unsplash.com/photo-1464366400600-7168b8af9bc3?w=1200&q=80",
+  "https://images.unsplash.com/photo-1478146896981-b80fe463b330?w=1200&q=80",
+];
+
+const MEETING_IMAGES = [
+  "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80",
+  "https://images.unsplash.com/photo-1431540015161-0bf868a2d407?w=1200&q=80",
+  "https://images.unsplash.com/photo-1517502884422-41eaead166d4?w=1200&q=80",
+];
+
+const COMMENT_IMAGES = [
+  "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80",
+  "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
+];
+
+const RIYADH_MAP =
+  "https://maps.google.com/maps?q=24.7136,46.6753&z=14&output=embed";
+
+const LONG_DESC_AR =
+  "نص تجريبي لوصف الفعالية. يجتمع أفراد العائلة في أجواء مليئة بالفرح والمودة للاحتفال بهذه المناسبة المميزة. نرحب بجميع الضيوف الكرام ونتمنى لكم وقتاً سعيداً مليئاً بالخير والمحبة. تتوفر مواقف للسيارات وخدمات استقبال عند المدخل الرئيسي.";
+
+const LONG_DESC_EN =
+  "Sample event description. Family members gather in a joyful atmosphere to celebrate this special occasion. We welcome all guests and wish you a happy time filled with kindness and love. Parking and reception services are available at the main entrance.";
+
+const DEFAULT_COMMENTS: DummyEventComment[] = [
   {
+    id: "c1",
+    author: "راشد صالح",
+    authorEn: "Rashid Saleh",
+    dateLabel: "22 مايو 2025 - 12:44 م",
+    dateLabelEn: "22 May 2025 - 12:44 PM",
+    text: "عسى أن تكون السعادة في حياتك علامات، ويضحك لك الحظ على مر العصور. تهاني. وسنكون حاضرين إن شاء الله.",
+    textEn:
+      "May happiness mark your life, and may fortune smile on you through the ages. Congratulations. We will be present, God willing.",
+    images: COMMENT_IMAGES,
+  },
+  {
+    id: "c2",
+    author: "فيصل الشعيبي",
+    authorEn: "Faisal Al-Shuaibi",
+    dateLabel: "21 مايو 2025 - 09:10 م",
+    dateLabelEn: "21 May 2025 - 9:10 PM",
+    text: "ألف مبروك للعريس وأسرته الكريمة، نتمنى لكم دوام السرور.",
+    textEn: "Congratulations to the groom and his noble family; we wish you lasting joy.",
+    images: [COMMENT_IMAGES[0]],
+  },
+];
+
+type EventSeed = Omit<
+  DummyEvent,
+  | "images"
+  | "detailTitle"
+  | "detailTitleEn"
+  | "detailDescription"
+  | "detailDescriptionEn"
+  | "address"
+  | "addressEn"
+  | "mapEmbedUrl"
+  | "comments"
+> & {
+  withMap?: boolean;
+};
+
+function buildEvent(seed: EventSeed): DummyEvent {
+  const isWedding = seed.category === "wedding";
+  return {
+    ...seed,
+    images: isWedding ? VENUE_IMAGES : MEETING_IMAGES,
+    detailTitle: isWedding ? "زواج أحد أفراد الأسرة" : seed.title,
+    detailTitleEn: isWedding ? "Marriage of a family member" : seed.titleEn,
+    detailDescription: LONG_DESC_AR,
+    detailDescriptionEn: LONG_DESC_EN,
+    address: "شارع خالد بن الوليد وتحديداً بحي الياسمين بالرياض",
+    addressEn: "Khalid bin Walid Street, Al-Yasmeen, Riyadh",
+    mapEmbedUrl: seed.withMap === false ? undefined : RIYADH_MAP,
+    comments: DEFAULT_COMMENTS,
+  };
+}
+
+export const DUMMY_EVENTS: DummyEvent[] = [
+  buildEvent({
     id: "w1",
     category: "wedding",
     title: "حفل زفاف طلال بن راشد",
@@ -77,8 +178,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع صالح + ص",
     branchEn: "Saleh branch + S",
     dateKey: TODAY_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "w2",
     category: "wedding",
     title: "حفل زفاف أحمد بن محمد",
@@ -95,8 +196,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع فيصل + ف",
     branchEn: "Faisal branch + F",
     dateKey: TODAY_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "w3",
     category: "wedding",
     title: "حفل زفاف خالد بن سعد",
@@ -113,8 +214,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع ناصر + ن",
     branchEn: "Nasser branch + N",
     dateKey: TODAY_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "w4",
     category: "wedding",
     title: "حفل زفاف عبدالله بن فهد",
@@ -131,8 +232,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع ماجد + م",
     branchEn: "Majed branch + M",
     dateKey: TODAY_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "m1",
     category: "meetings",
     title: "اجتماع مجلس الإدارة الشهري",
@@ -147,8 +248,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع الإدارة",
     branchEn: "Admin branch",
     dateKey: TODAY_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "m2",
     category: "meetings",
     title: "لقاء تنسيقي لصندوق العائلة",
@@ -163,8 +264,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع الصندوق",
     branchEn: "Fund branch",
     dateKey: TODAY_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "m3",
     category: "meetings",
     title: "ورشة تخطيط الفعاليات",
@@ -179,8 +280,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع الفعاليات",
     branchEn: "Events branch",
     dateKey: TODAY_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "m4",
     category: "meetings",
     title: "اجتماع لجنة التميز",
@@ -195,8 +296,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع التميز",
     branchEn: "Excellence branch",
     dateKey: TODAY_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "w5",
     category: "wedding",
     title: "حفل زفاف سعد بن علي",
@@ -211,8 +312,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع علي + ع",
     branchEn: "Ali branch + A",
     dateKey: TOMORROW_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "m5",
     category: "meetings",
     title: "اجتماع الطوارئ",
@@ -227,8 +328,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع الإدارة",
     branchEn: "Admin branch",
     dateKey: TOMORROW_KEY,
-  },
-  {
+  }),
+  buildEvent({
     id: "w6",
     category: "wedding",
     title: "حفل زفاف يوسف بن حامد",
@@ -243,8 +344,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع حامد + ح",
     branchEn: "Hamed branch + H",
     dateKey: PLUS_2,
-  },
-  {
+  }),
+  buildEvent({
     id: "m6",
     category: "meetings",
     title: "اجتماع المتطوعين",
@@ -259,8 +360,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع التطوع",
     branchEn: "Volunteers branch",
     dateKey: PLUS_3,
-  },
-  {
+  }),
+  buildEvent({
     id: "m7",
     category: "meetings",
     title: "مراجعة أسبوعية",
@@ -275,7 +376,8 @@ export const DUMMY_EVENTS: DummyEvent[] = [
     branch: "فرع الإدارة",
     branchEn: "Admin branch",
     dateKey: YESTERDAY_KEY,
-  },
+    withMap: false,
+  }),
 ];
 
 export const SLIDER_DATES = buildSliderDates(21);
@@ -286,4 +388,8 @@ export function getEventsForDate(dateKey: string): DummyEvent[] {
 
 export function getDatesWithEvents(): Set<string> {
   return new Set(DUMMY_EVENTS.map((event) => event.dateKey));
+}
+
+export function getEventById(id: string): DummyEvent | undefined {
+  return DUMMY_EVENTS.find((event) => event.id === id);
 }
