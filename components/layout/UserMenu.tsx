@@ -129,7 +129,7 @@ export function UserMenu({ locale, dictionary, onNavigate }: UserMenuProps) {
           </div>
 
           <Link
-            href={`/${locale}/dashboard`}
+            href={`/${locale}/dashboard/events`}
             role="menuitem"
             onClick={() => {
               setOpen(false);

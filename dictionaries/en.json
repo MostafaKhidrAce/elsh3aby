@@ -361,5 +361,57 @@
   "common": {
     "loading": "Loading...",
     "required": "This field is required"
+  },
+  "dashboard": {
+    "backHome": "Back to home",
+    "events": "Events",
+    "news": "Family news",
+    "requests": "Requests",
+    "excellence": "Family excellence",
+    "members": "Members",
+    "elections": "Family fund elections",
+    "booking": "Venue booking",
+    "market": "Qaisariyah market",
+    "achievements": "Fund achievements",
+    "profile": "Personal profile",
+    "logout": "Log out",
+    "comingSoon": "Content for this section will be added soon.",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "eventsPage": {
+      "overviewTitle": "Events overview",
+      "allEvents": "All events",
+      "hijriDate": "6 Dhu al-Hijjah 1446 AH",
+      "eventsToday": "You have {count} events today",
+      "addEvent": "Add event",
+      "calendar": "Calendar",
+      "allSections": "All sections",
+      "searchPlaceholder": "Search for an event",
+      "filter": "Filter",
+      "remind": "Remind me of the event",
+      "cancelRemind": "Cancel reminder",
+      "seeMore": "See more",
+      "seeLess": "See less",
+      "bookedBy": "Booked by",
+      "emptyTitle": "No events",
+      "emptyDescription": "There are no events on this day.",
+      "categoryWedding": "Marriage",
+      "categoryMeetings": "Meetings",
+      "weekdays": ["Sat", "Sun", "Mon", "Tue", "Wed", "Thu", "Fri"],
+      "months": [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+      ]
+    }
   }
 }
