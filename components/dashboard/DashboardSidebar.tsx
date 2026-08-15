@@ -73,7 +73,13 @@ export function DashboardSidebar({
       key: "requests",
       href: `/${locale}/dashboard/requests`,
       icon: Files,
-      match: "/dashboard/requests",
+      match: [
+        "/dashboard/requests",
+        "/dashboard/add-request",
+        "/dashboard/add-consultation",
+        "/dashboard/add-offer",
+        "/dashboard/offers",
+      ],
     },
     {
       key: "excellence",

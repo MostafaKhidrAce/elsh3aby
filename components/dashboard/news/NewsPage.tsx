@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NewsCard } from "@/components/dashboard/news/NewsCard";
+import { DashboardItemsEmptyState } from "@/components/dashboard/DashboardItemsEmptyState";
 import {
   DUMMY_NEWS,
   type NewsCategoryId,
@@ -116,10 +117,10 @@ export function NewsPage({ locale, dictionary }: NewsPageProps) {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="py-16 text-center">
-            <h2 className="text-lg font-bold text-[#170F49]">{t.emptyTitle}</h2>
-            <p className="mt-2 text-sm text-[#6B7280]">{t.emptyDescription}</p>
-          </div>
+          <DashboardItemsEmptyState
+            title={t.emptyTitle}
+            description={t.emptyDescription}
+          />
         ) : (
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {filtered.map((item) => (
