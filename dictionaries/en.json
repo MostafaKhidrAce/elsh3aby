@@ -453,6 +453,32 @@
       "addEventSuccessTitle": "Event added successfully",
       "addEventSuccessDescription": "Thank you for participating. Your event was submitted successfully. It will be reviewed by administration then published.",
       "agree": "Agree"
+    },
+    "newsPage": {
+      "title": "Family news",
+      "searchPlaceholder": "Search",
+      "filterAll": "All news",
+      "filterScientific": "Scientific",
+      "filterCommunity": "Community",
+      "filterReligious": "Religious",
+      "emptyTitle": "No news",
+      "emptyDescription": "No news matches your search or filter.",
+      "breadcrumbOverview": "News overview",
+      "breadcrumbDetails": "News details",
+      "allNews": "All news",
+      "backToNews": "Back",
+      "publishedBy": "Published by",
+      "showAllComments": "Show all comments",
+      "commentsTitle": "Comments",
+      "addComment": "Add a comment",
+      "addCommentModalTitle": "Add comment",
+      "writeCommentLabel": "Write your comment",
+      "commentPlaceholder": "Enter your comment here",
+      "publishComment": "Publish comment",
+      "reviewComment": "Review",
+      "commentSuccessTitle": "Comment published",
+      "commentSuccessDescription": "Thank you for participating. Your comment was sent successfully. It will be reviewed by administration and then published.",
+      "ok": "OK"
     }
   }
 }

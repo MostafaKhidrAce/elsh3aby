@@ -453,6 +453,32 @@
       "addEventSuccessTitle": "تمت إضافة الفعالية بنجاح",
       "addEventSuccessDescription": "شكراً لك للمشاركة. تم إرسال فعاليتك بنجاح. سيتم مراجعتها من خلال الإدارة ثم نشرها",
       "agree": "موافقة"
+    },
+    "newsPage": {
+      "title": "أخبار العائلة",
+      "searchPlaceholder": "بحث",
+      "filterAll": "كل الأخبار",
+      "filterScientific": "علمية",
+      "filterCommunity": "مجتمعية",
+      "filterReligious": "دينية",
+      "emptyTitle": "لا توجد أخبار",
+      "emptyDescription": "لا توجد أخبار مطابقة للبحث أو التصفية.",
+      "breadcrumbOverview": "نظرة عامة على الأخبار",
+      "breadcrumbDetails": "تفاصيل الخبر",
+      "allNews": "كل الأخبار",
+      "backToNews": "العودة",
+      "publishedBy": "تم النشر بواسطة",
+      "showAllComments": "عرض جميع التعليقات",
+      "commentsTitle": "تعليقات",
+      "addComment": "أضف تعليقًا",
+      "addCommentModalTitle": "اضافة تعليق",
+      "writeCommentLabel": "اكتب تعليقك",
+      "commentPlaceholder": "ادخل تعليقك هنا",
+      "publishComment": "نشر التعليق",
+      "reviewComment": "مراجعة",
+      "commentSuccessTitle": "تم نشر التعليق",
+      "commentSuccessDescription": "شكراً لمشاركتك، لقد تم إرسال تعليقك بنجاح. سيتم مراجعته من قبل الإدارة ومن ثم نشره.",
+      "ok": "موافق"
     }
   }
 }
