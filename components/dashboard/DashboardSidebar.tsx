@@ -78,7 +78,9 @@ export function DashboardSidebar({
         "/dashboard/add-request",
         "/dashboard/add-consultation",
         "/dashboard/add-offer",
+        "/dashboard/add-publish-news",
         "/dashboard/offers",
+        "/dashboard/packages",
       ],
     },
     {
