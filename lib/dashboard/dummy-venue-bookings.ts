@@ -15,6 +15,29 @@ export type DummyVenueBooking = {
   bookedByEn: string;
   branch: string;
   branchEn: string;
+  /** Optional fields used by /dashboard/booking status UI */
+  status?: "pending" | "approved";
+  canCancel?: boolean;
+  dateKey?: string;
+};
+
+export type BookingStatusItem = {
+  id: string;
+  status: "pending" | "approved";
+  canCancel: boolean;
+  dateKey: string;
+  title: string;
+  titleEn: string;
+  description: string;
+  descriptionEn: string;
+  dateLabel: string;
+  dateLabelEn: string;
+  time: string;
+  timeEn: string;
+  bookedBy: string;
+  bookedByEn: string;
+  branch: string;
+  branchEn: string;
 };
 
 const HALL_IMG =
@@ -28,6 +51,17 @@ const DESC_AR =
   "هذا النص هو مثال لنص يمكن أن يستبدل في نفس المساحة، لقد تم توليد هذا النص من مولد النص العربى.";
 const DESC_EN =
   "This is sample placeholder text that can be replaced in the same space for the booking description.";
+
+export const BOOKING_PRICE = 300;
+
+/** Days shown with outline markers on the booking calendar (demo). */
+export const BOOKING_BUSY_DATE_KEYS = new Set([
+  "2026-01-06",
+  "2026-01-13",
+]);
+
+/** Selecting / submitting these dates shows the conflict modal (demo). */
+export const BOOKING_CONFLICT_DATE_KEYS = new Set(["2026-01-06"]);
 
 export const DUMMY_VENUE_BOOKINGS: DummyVenueBooking[] = [
   {
@@ -155,6 +189,69 @@ export const DUMMY_VENUE_BOOKINGS: DummyVenueBooking[] = [
     bookedByEn: "Abdullah Fahd",
     branch: "الأحساء",
     branchEn: "Al-Ahsa",
+  },
+];
+
+const WEDDING_DESC_AR =
+  "سيتم إقامة حفل زواج أحد أبناء العائلة في مقر العائلة بمدينة الرياض";
+const WEDDING_DESC_EN =
+  "A wedding for one of the family members will be held at the family headquarters in Riyadh.";
+
+/** Status list shown on /dashboard/booking */
+export const DUMMY_BOOKING_STATUS_ITEMS: BookingStatusItem[] = [
+  {
+    id: "bs1",
+    status: "pending",
+    canCancel: true,
+    dateKey: "2025-07-17",
+    title: "حفل زواج أحد أبناء العائلة",
+    titleEn: "Wedding of a family member",
+    description: WEDDING_DESC_AR,
+    descriptionEn: WEDDING_DESC_EN,
+    dateLabel: "17 يوليو 2025",
+    dateLabelEn: "17 July 2025",
+    time: "2 م إلى 5 م",
+    timeEn: "2 PM to 5 PM",
+    bookedBy: "صالح عبدالله سلطان",
+    bookedByEn: "Saleh Abdullah Sultan",
+    branch: "فرع آل صالح - حي النخيل",
+    branchEn: "Al-Saleh branch - Al-Nakheel",
+  },
+  {
+    id: "bs2",
+    status: "approved",
+    canCancel: true,
+    dateKey: "2025-07-17",
+    title: "حفل زفاف طلال بن راشد",
+    titleEn: "Talal bin Rashid's wedding",
+    description: WEDDING_DESC_AR,
+    descriptionEn: WEDDING_DESC_EN,
+    dateLabel: "17 يوليو 2025",
+    dateLabelEn: "17 July 2025",
+    time: "2 م إلى 5 م",
+    timeEn: "2 PM to 5 PM",
+    bookedBy: "صالح عبدالله سلطان",
+    bookedByEn: "Saleh Abdullah Sultan",
+    branch: "فرع آل صالح - حي النخيل",
+    branchEn: "Al-Saleh branch - Al-Nakheel",
+  },
+  {
+    id: "bs3",
+    status: "pending",
+    canCancel: false,
+    dateKey: "2025-08-01",
+    title: "لقاء عائلي شهري",
+    titleEn: "Monthly family gathering",
+    description: WEDDING_DESC_AR,
+    descriptionEn: WEDDING_DESC_EN,
+    dateLabel: "1 أغسطس 2025",
+    dateLabelEn: "1 August 2025",
+    time: "4 م إلى 8 م",
+    timeEn: "4 PM to 8 PM",
+    bookedBy: "فيصل الشعيبي",
+    bookedByEn: "Faisal Al-Shuaibi",
+    branch: "فرع الرياض",
+    branchEn: "Riyadh branch",
   },
 ];
 

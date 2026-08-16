@@ -105,7 +105,7 @@ export function DashboardSidebar({
       key: "booking",
       href: `/${locale}/dashboard/booking`,
       icon: Building2,
-      match: "/dashboard/booking",
+      match: ["/dashboard/booking", "/dashboard/booking/new"],
     },
     {
       key: "market",

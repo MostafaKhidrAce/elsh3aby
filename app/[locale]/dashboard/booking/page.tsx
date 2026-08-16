@@ -1,4 +1,4 @@
-import { DashboardPagePlaceholder } from "@/components/dashboard/DashboardPagePlaceholder";
+import { BookingPage } from "@/components/dashboard/booking/BookingPage";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -12,10 +12,5 @@ export default async function DashboardBookingPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return (
-    <DashboardPagePlaceholder
-      title={dictionary.dashboard.booking}
-      dictionary={dictionary}
-    />
-  );
+  return <BookingPage locale={localeParam} dictionary={dictionary} />;
 }
