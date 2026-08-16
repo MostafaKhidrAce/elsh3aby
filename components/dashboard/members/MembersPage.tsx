@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Users } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { DashboardItemsEmptyState } from "@/components/dashboard/DashboardItemsEmptyState";
@@ -25,9 +26,17 @@ type TabId = "current" | "previous";
 const cardClass =
   "rounded-[20px] bg-white p-4 shadow-[0_8px_30px_rgba(25,33,61,0.06)] sm:p-5 lg:p-6";
 
-export function MembersPage({ locale, dictionary }: MembersPageProps) {
+function parseTab(value: string | null): TabId {
+  return value === "previous" ? "previous" : "current";
+}
+
+function MembersPageInner({ locale, dictionary }: MembersPageProps) {
   const t = dictionary.dashboard.membersPage;
-  const [tab, setTab] = useState<TabId>("current");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<TabId>(() =>
+    parseTab(searchParams.get("tab")),
+  );
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -42,7 +51,17 @@ export function MembersPage({ locale, dictionary }: MembersPageProps) {
     });
   }, [query]);
 
-  const selected = selectedId ? getMemberById(selectedId) ?? null : null;
+  const selected = selectedId ? (getMemberById(selectedId) ?? null) : null;
+
+  function changeTab(next: TabId) {
+    setTab(next);
+    setQuery("");
+    const href =
+      next === "previous"
+        ? `/${locale}/dashboard/members?tab=previous`
+        : `/${locale}/dashboard/members`;
+    router.replace(href, { scroll: false });
+  }
 
   return (
     <>
@@ -77,10 +96,7 @@ export function MembersPage({ locale, dictionary }: MembersPageProps) {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => {
-                    setTab(item.id);
-                    setQuery("");
-                  }}
+                  onClick={() => changeTab(item.id)}
                   className={`inline-flex items-center rounded-[10px] px-5 py-2.5 text-sm font-semibold transition sm:px-6 ${
                     active
                       ? "bg-[#133D3C] text-white shadow-[0_6px_16px_rgba(19,61,60,0.22)]"
@@ -153,5 +169,13 @@ export function MembersPage({ locale, dictionary }: MembersPageProps) {
         onClose={() => setSelectedId(null)}
       />
     </>
+  );
+}
+
+export function MembersPage(props: MembersPageProps) {
+  return (
+    <Suspense fallback={null}>
+      <MembersPageInner {...props} />
+    </Suspense>
   );
 }

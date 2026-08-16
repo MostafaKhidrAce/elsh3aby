@@ -99,7 +99,7 @@ export function DashboardSidebar({
       key: "elections",
       href: `/${locale}/dashboard/elections`,
       icon: Vote,
-      match: "/dashboard/elections",
+      match: ["/dashboard/elections", "/dashboard/elections/nominate"],
     },
     {
       key: "booking",

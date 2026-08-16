@@ -1,4 +1,4 @@
-import { DashboardPagePlaceholder } from "@/components/dashboard/DashboardPagePlaceholder";
+import { ElectionsPage } from "@/components/dashboard/elections/ElectionsPage";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -12,10 +12,5 @@ export default async function DashboardElectionsPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return (
-    <DashboardPagePlaceholder
-      title={dictionary.dashboard.elections}
-      dictionary={dictionary}
-    />
-  );
+  return <ElectionsPage locale={localeParam} dictionary={dictionary} />;
 }
