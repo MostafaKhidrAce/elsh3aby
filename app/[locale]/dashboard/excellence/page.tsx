@@ -1,4 +1,4 @@
-import { DashboardPagePlaceholder } from "@/components/dashboard/DashboardPagePlaceholder";
+import { ExcellencePage } from "@/components/dashboard/excellence/ExcellencePage";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -12,10 +12,5 @@ export default async function DashboardExcellencePage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return (
-    <DashboardPagePlaceholder
-      title={dictionary.dashboard.excellence}
-      dictionary={dictionary}
-    />
-  );
+  return <ExcellencePage locale={localeParam} dictionary={dictionary} />;
 }

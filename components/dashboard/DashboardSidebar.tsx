@@ -93,7 +93,7 @@ export function DashboardSidebar({
       key: "members",
       href: `/${locale}/dashboard/members`,
       icon: Users,
-      match: "/dashboard/members",
+      match: ["/dashboard/members", "/dashboard/members/boards"],
     },
     {
       key: "elections",

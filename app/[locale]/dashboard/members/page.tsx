@@ -1,4 +1,4 @@
-import { DashboardPagePlaceholder } from "@/components/dashboard/DashboardPagePlaceholder";
+import { MembersPage } from "@/components/dashboard/members/MembersPage";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -12,10 +12,5 @@ export default async function DashboardMembersPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return (
-    <DashboardPagePlaceholder
-      title={dictionary.dashboard.members}
-      dictionary={dictionary}
-    />
-  );
+  return <MembersPage locale={localeParam} dictionary={dictionary} />;
 }
