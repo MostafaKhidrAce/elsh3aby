@@ -528,6 +528,23 @@
       "showLess": "عرض أقل",
       "back": "رجوع"
     },
+    "achievementsPage": {
+      "title": "التميز العائلي",
+      "subtitle": "الإنجاز العائلي",
+      "overviewTitle": "نظرة عامة على منجزات العائلة",
+      "breadcrumb": "منجزات العائلة",
+      "detailsBreadcrumb": "تفاصيل المنتج",
+      "searchPlaceholder": "بحث",
+      "filterAll": "الكل",
+      "filterScientific": "علمي",
+      "filterCommunal": "طائفي",
+      "filterReligious": "ديني",
+      "writtenBy": "كتب بواسطة",
+      "downloadFile": "تحميل الملف",
+      "emptyTitle": "لا توجد منجزات",
+      "emptyDescription": "لا توجد نتائج مطابقة للبحث.",
+      "back": "رجوع"
+    },
     "marketPage": {
       "title": "سوق القيصرية",
       "subtitle": "سوق العائلة",

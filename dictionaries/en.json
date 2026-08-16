@@ -528,6 +528,23 @@
       "showLess": "Show less",
       "back": "Back"
     },
+    "achievementsPage": {
+      "title": "Family excellence",
+      "subtitle": "Family achievement",
+      "overviewTitle": "Overview of family achievements",
+      "breadcrumb": "Family achievements",
+      "detailsBreadcrumb": "Product details",
+      "searchPlaceholder": "Search",
+      "filterAll": "All",
+      "filterScientific": "Scientific",
+      "filterCommunal": "Communal",
+      "filterReligious": "Religious",
+      "writtenBy": "Written by",
+      "downloadFile": "Download file",
+      "emptyTitle": "No achievements",
+      "emptyDescription": "No results match your search.",
+      "back": "Back"
+    },
     "marketPage": {
       "title": "Al-Qaysariya Market",
       "subtitle": "Family market",

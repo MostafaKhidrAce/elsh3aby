@@ -90,7 +90,7 @@ export function MarketPage({ locale, dictionary }: MarketPageProps) {
       </header>
 
       <section className={`${cardClass} space-y-5`}>
-        <div className="flex w-full items-center gap-1 rounded-[999px] bg-[#F6F1E8] p-1.5">
+        <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
           {(
             [
               { id: "market" as const, label: t.tabMarket },
@@ -103,10 +103,10 @@ export function MarketPage({ locale, dictionary }: MarketPageProps) {
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
-                className={`flex-1 rounded-[999px] px-3 py-3 text-center text-sm font-bold transition sm:px-5 sm:text-base ${
+                className={`inline-flex min-w-[140px] items-center justify-center rounded-[10px] px-5 py-2.5 text-sm font-semibold transition sm:min-w-[180px] sm:px-6 sm:text-base ${
                   active
                     ? "bg-[#133D3C] text-white shadow-[0_6px_16px_rgba(19,61,60,0.22)]"
-                    : "bg-transparent text-[#D5AF34] hover:bg-[#EEE7DA]/60"
+                    : "bg-[#F6F1E8] text-[#170F49] hover:bg-[#EEE7DA]"
                 }`}
               >
                 {item.label}

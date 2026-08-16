@@ -1,0 +1,25 @@
+import { AchievementDetailsPage } from "@/components/dashboard/achievements/AchievementDetailsPage";
+import { getAchievementById } from "@/lib/dashboard/dummy-achievements";
+import { notFound } from "next/navigation";
+import { isLocale } from "@/lib/i18n/config";
+import { getDictionary } from "@/lib/i18n/get-dictionary";
+
+export default async function DashboardAchievementDetailsPage({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}) {
+  const { locale: localeParam, id } = await params;
+  if (!isLocale(localeParam)) notFound();
+  const item = getAchievementById(id);
+  if (!item) notFound();
+  const dictionary = await getDictionary(localeParam);
+
+  return (
+    <AchievementDetailsPage
+      locale={localeParam}
+      dictionary={dictionary}
+      item={item}
+    />
+  );
+}
