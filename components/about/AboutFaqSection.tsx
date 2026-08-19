@@ -2,25 +2,22 @@
 
 import { useState } from "react";
 import { Minus, Plus } from "lucide-react";
-import type { Dictionary } from "@/lib/i18n/get-dictionary";
-import type { Locale } from "@/lib/i18n/config";
+import type { FaqView } from "@/lib/api/website-view";
 
 type AboutFaqSectionProps = {
-  locale: Locale;
-  dictionary: Dictionary;
+  data: FaqView;
 };
 
 const TEXT = "#133D3C";
 const ACTIVE_TITLE = "#FCB900";
 
-export function AboutFaqSection({ dictionary }: AboutFaqSectionProps) {
-  const t = dictionary.about.faqSection;
-  const [openIndex, setOpenIndex] = useState(1);
+export function AboutFaqSection({ data }: AboutFaqSectionProps) {
+  const [openIndex, setOpenIndex] = useState(0);
 
-  const rightColumn = t.items
+  const rightColumn = data.items
     .map((item, index) => ({ item, index }))
     .filter(({ index }) => index % 2 === 0);
-  const leftColumn = t.items
+  const leftColumn = data.items
     .map((item, index) => ({ item, index }))
     .filter(({ index }) => index % 2 === 1);
 
@@ -28,12 +25,15 @@ export function AboutFaqSection({ dictionary }: AboutFaqSectionProps) {
     setOpenIndex((current) => (current === index ? -1 : index));
   }
 
-  function renderCard(item: (typeof t.items)[number], index: number) {
+  function renderCard(
+    item: FaqView["items"][number],
+    index: number,
+  ) {
     const isOpen = openIndex === index;
 
     return (
       <div
-        key={`${item.question}-${index}`}
+        key={`${item.id}-${index}`}
         className="w-full rounded-[16px]"
         style={{
           backgroundColor: isOpen ? "#E7EEED" : "#F6EFE7",
@@ -90,7 +90,7 @@ export function AboutFaqSection({ dictionary }: AboutFaqSectionProps) {
           className="text-center text-[24px] font-bold leading-tight sm:text-[32px] lg:text-[45px]"
           style={{ color: TEXT }}
         >
-          {t.title}
+          {data.title}
         </h2>
 
         <div className="mt-6 flex flex-col gap-3 sm:mt-8 sm:gap-4 lg:mt-12 lg:flex-row lg:items-start lg:gap-6">

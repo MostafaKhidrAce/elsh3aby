@@ -9,6 +9,7 @@ type SecondaryHeroProps = {
   title: string;
   breadcrumbHome: string;
   breadcrumbCurrent: string;
+  backgroundUrl?: string | null;
 };
 
 const HERO_BG = "/backgrounds/secondryherosection.svg";
@@ -19,12 +20,13 @@ export function SecondaryHero({
   title,
   breadcrumbHome,
   breadcrumbCurrent,
+  backgroundUrl,
 }: SecondaryHeroProps) {
   return (
     <section className="relative max-w-full overflow-hidden rounded-[1.25rem] text-white sm:rounded-[1.75rem]">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${HERO_BG})` }}
+        style={{ backgroundImage: `url(${backgroundUrl || HERO_BG})` }}
         aria-hidden
       />
 

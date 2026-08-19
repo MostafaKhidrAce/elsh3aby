@@ -5,15 +5,25 @@ import { useLoginRequired } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { ServiceCardView } from "@/lib/api/website-view";
 
 type ServicesSectionProps = {
   locale: Locale;
   dictionary: Dictionary;
+  eyebrow: string;
+  title: string;
+  description: string;
+  cards: ServiceCardView[];
 };
 
-const CARD_IMAGE = "/dummy%20imgs/home%20page/dummy-card-img.svg";
-
-export function ServicesSection({ locale, dictionary }: ServicesSectionProps) {
+export function ServicesSection({
+  locale,
+  dictionary,
+  eyebrow,
+  title,
+  description,
+  cards,
+}: ServicesSectionProps) {
   const t = dictionary.home.servicesSection;
   const isAr = locale === "ar";
   const { isAuthenticated } = useAuth();
@@ -37,28 +47,28 @@ export function ServicesSection({ locale, dictionary }: ServicesSectionProps) {
               className="text-[18px] font-medium leading-normal sm:text-[20px] lg:text-[24px]"
               style={{ color: "#133D3C" }}
             >
-              {t.title}
+              {eyebrow}
             </p>
             <h2
               className="mt-2 text-[24px] font-bold leading-tight sm:mt-3 sm:text-[28px] md:text-[32px] lg:text-[46px]"
               style={{ color: "#133D3C" }}
             >
-              {t.subtitle}
+              {title}
             </h2>
             <p
               className="mx-auto mt-3 max-w-3xl text-[15px] font-medium leading-7 sm:mt-4 sm:text-[17px] sm:leading-8 lg:text-[20px] lg:leading-9"
               style={{ color: "#426463" }}
             >
-              {t.description}
+              {description}
             </p>
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-5 sm:mt-10 sm:grid-cols-2 sm:gap-6 lg:mt-12 lg:grid-cols-3 lg:gap-8">
-            {t.cards.map((card) => (
-              <article key={card.title} className="flex flex-col">
+            {cards.map((card) => (
+              <article key={card.id} className="flex flex-col">
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px]">
                   <Image
-                    src={CARD_IMAGE}
+                    src={card.imageUrl}
                     alt={card.title}
                     fill
                     className="object-cover"

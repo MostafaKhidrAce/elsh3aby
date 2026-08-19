@@ -1,10 +1,12 @@
 import { Mail, MapPin, Phone } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { ContactInfoView } from "@/lib/api/website-view";
 
 type ContactInfoSectionProps = {
   locale: Locale;
   dictionary: Dictionary;
+  data: ContactInfoView;
 };
 
 const TEXT = "#133D3C";
@@ -12,6 +14,7 @@ const TEXT = "#133D3C";
 export function ContactInfoSection({
   locale,
   dictionary,
+  data,
 }: ContactInfoSectionProps) {
   const t = dictionary.contact.infoSection;
   const isAr = locale === "ar";
@@ -22,19 +25,19 @@ export function ContactInfoSection({
         className="text-[16px] font-medium sm:text-[18px] lg:text-[20px]"
         style={{ color: TEXT }}
       >
-        {t.eyebrow}
+        {data.eyebrow}
       </p>
       <h2
         className="mt-2 text-[28px] font-bold leading-tight sm:text-[36px] lg:text-[42px]"
         style={{ color: TEXT }}
       >
-        {t.title}
+        {data.title}
       </h2>
       <p
         className="mt-4 max-w-xl text-[15px] font-normal leading-7 sm:text-[17px] sm:leading-8 lg:text-[18px] lg:leading-9"
         style={{ color: TEXT }}
       >
-        {t.description}
+        {data.description}
       </p>
     </div>
   );
@@ -55,11 +58,11 @@ export function ContactInfoSection({
           <div className="min-w-0" style={{ color: TEXT }}>
             <p className="text-[13px] sm:text-[14px]">{t.phoneLabel}</p>
             <a
-              href={`tel:${t.phone.replace(/-/g, "")}`}
+              href={`tel:${data.phone.replace(/-/g, "")}`}
               className="mt-1 block text-[15px] font-semibold sm:text-[16px]"
               dir="ltr"
             >
-              {t.phone}
+              {data.phone}
             </a>
           </div>
         </div>
@@ -76,10 +79,10 @@ export function ContactInfoSection({
           <div className="min-w-0" style={{ color: TEXT }}>
             <p className="text-[13px] sm:text-[14px]">{t.emailLabel}</p>
             <a
-              href={`mailto:${t.email}`}
+              href={`mailto:${data.email}`}
               className="mt-1 block truncate text-[15px] font-semibold sm:text-[16px]"
             >
-              {t.email}
+              {data.email}
             </a>
           </div>
         </div>
@@ -96,7 +99,7 @@ export function ContactInfoSection({
           <div className="min-w-0" style={{ color: TEXT }}>
             <p className="text-[13px] sm:text-[14px]">{t.addressLabel}</p>
             <p className="mt-1 text-[15px] font-semibold sm:text-[16px]">
-              {t.address}
+              {data.address}
             </p>
           </div>
         </div>

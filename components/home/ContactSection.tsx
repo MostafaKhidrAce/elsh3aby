@@ -1,38 +1,65 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent } from "react";
+import { FormEvent, useState } from "react";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { JoinSectionView } from "@/lib/api/website-view";
+import { submitContactMessage } from "@/lib/api/website";
+import { toApiPhone } from "@/lib/api/localized";
 
 type ContactSectionProps = {
   locale: Locale;
   dictionary: Dictionary;
+  data: JoinSectionView;
 };
 
-const SECTION_IMAGE = "/backgrounds/contact-us-section-bg.svg";
+const HOME_MESSAGE_TYPE_ID = 1;
 
 const inputClassName =
   "w-full rounded-[10px] border-0 bg-[#F7F7F7] p-4 text-[14px] font-normal text-black shadow-none outline-none ring-0 transition placeholder:text-[14px] placeholder:font-normal placeholder:text-[#426463] focus:border-0 focus:outline-none focus:ring-0 focus:shadow-none sm:p-5 sm:text-[16px] sm:placeholder:text-[16px]";
 
-export function ContactSection({ locale, dictionary }: ContactSectionProps) {
+export function ContactSection({
+  locale,
+  dictionary,
+  data,
+}: ContactSectionProps) {
   const t = dictionary.home.contactSection;
   const isAr = locale === "ar";
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
+    "idle",
+  );
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const name = `${String(formData.get("firstName") ?? "")} ${String(
+      formData.get("lastName") ?? "",
+    )}`.trim();
+    const email = String(formData.get("email") ?? "");
+    const phone = toApiPhone(String(formData.get("phone") ?? ""));
+    const message = String(formData.get("message") ?? "");
+    const subject = locale === "ar" ? "استفسار عام" : "General Inquiry";
 
-    console.log({
-      firstName: String(formData.get("firstName") ?? ""),
-      lastName: String(formData.get("lastName") ?? ""),
-      email: String(formData.get("email") ?? ""),
-      phone: String(formData.get("phone") ?? ""),
-      message: String(formData.get("message") ?? ""),
-    });
-
-    form.reset();
+    setStatus("loading");
+    try {
+      await submitContactMessage(
+        {
+          name,
+          phone,
+          email,
+          message_type_id: HOME_MESSAGE_TYPE_ID,
+          subject,
+          message,
+        },
+        locale,
+      );
+      form.reset();
+      setStatus("idle");
+    } catch {
+      setStatus("error");
+    }
   }
 
   return (
@@ -46,7 +73,7 @@ export function ContactSection({ locale, dictionary }: ContactSectionProps) {
       >
         <div className="relative min-h-[240px] overflow-hidden rounded-[20px] sm:min-h-[320px] lg:min-h-full">
           <Image
-            src={SECTION_IMAGE}
+            src={data.imageUrl}
             alt=""
             fill
             className="object-cover"
@@ -60,66 +87,74 @@ export function ContactSection({ locale, dictionary }: ContactSectionProps) {
             className="text-[24px] font-bold leading-tight sm:text-[28px] md:text-[32px] lg:text-[46px]"
             style={{ color: "#133D3C" }}
           >
-            {t.title}
+            {data.title}
           </h2>
           <p
             className="mt-3 text-[15px] font-normal leading-7 sm:mt-4 sm:text-[17px] sm:leading-8 lg:text-[20px] lg:leading-9"
             style={{ color: "#426463" }}
           >
-            {t.description}
+            {data.description}
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-3 sm:mt-8 sm:gap-4">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-              <input
-                name="firstName"
-                required
-                placeholder={t.firstName}
-                className={inputClassName}
-              />
-              <input
-                name="lastName"
-                required
-                placeholder={t.lastName}
-                className={inputClassName}
-              />
-            </div>
+          <form
+            onSubmit={handleSubmit}
+            className="mt-6 flex flex-col gap-3 sm:mt-8 sm:gap-4"
+          >
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                <input
+                  name="firstName"
+                  required
+                  placeholder={t.firstName}
+                  className={inputClassName}
+                />
+                <input
+                  name="lastName"
+                  required
+                  placeholder={t.lastName}
+                  className={inputClassName}
+                />
+              </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-              <input
-                name="email"
-                type="email"
-                required
-                placeholder={t.email}
-                className={inputClassName}
-              />
-              <input
-                name="phone"
-                type="text"
-                inputMode="tel"
-                required
-                placeholder={t.phone}
-                dir={isAr ? "rtl" : "ltr"}
-                className={inputClassName}
-              />
-            </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                <input
+                  name="email"
+                  type="email"
+                  required
+                  placeholder={t.email}
+                  className={inputClassName}
+                />
+                <input
+                  name="phone"
+                  type="text"
+                  inputMode="tel"
+                  required
+                  placeholder={t.phone}
+                  dir={isAr ? "rtl" : "ltr"}
+                  className={inputClassName}
+                />
+              </div>
 
-            <textarea
-              name="message"
-              required
-              rows={5}
-              placeholder={t.message}
-              className={`${inputClassName} min-h-[120px] resize-none sm:min-h-[140px]`}
-            />
+              <textarea
+                name="message"
+                required
+                rows={5}
+                placeholder={t.message}
+                className={`${inputClassName} min-h-[120px] resize-none sm:min-h-[140px]`}
+              />
 
-            <button
-              type="submit"
-              className="inline-flex w-fit items-center justify-center rounded-md px-5 py-3 text-[14px] font-medium text-[#133D3C] transition hover:brightness-105 sm:px-6 sm:py-3.5 sm:text-[16px]"
-              style={{ backgroundColor: "#D5AF34" }}
-            >
-              {t.submit}
-            </button>
-          </form>
+              {status === "error" ? (
+                <p className="text-[13px] font-medium text-[#E11D48]">{t.error}</p>
+              ) : null}
+
+              <button
+                type="submit"
+                disabled={status === "loading"}
+                className="inline-flex w-fit items-center justify-center rounded-md px-5 py-3 text-[14px] font-medium text-[#133D3C] transition hover:brightness-105 disabled:opacity-70 sm:px-6 sm:py-3.5 sm:text-[16px]"
+                style={{ backgroundColor: "#D5AF34" }}
+              >
+                {t.submit}
+              </button>
+            </form>
         </div>
       </div>
     </section>

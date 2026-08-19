@@ -62,9 +62,11 @@ export function AnimatedStat({
         <p className="text-xs font-medium text-white/90 sm:text-sm lg:text-base">
           {label}
         </p>
-        <p className="text-[28px] font-bold leading-none text-white sm:text-[32px] lg:text-[40px]">
-          {moreThan}
-        </p>
+        {moreThan ? (
+          <p className="text-[28px] font-bold leading-none text-white sm:text-[32px] lg:text-[40px]">
+            {moreThan}
+          </p>
+        ) : null}
         <p className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
           {count.toLocaleString("en-US")}
         </p>

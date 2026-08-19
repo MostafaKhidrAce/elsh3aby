@@ -2,10 +2,12 @@ import Image from "next/image";
 import { Check } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { GoalsView } from "@/lib/api/website-view";
 
 type AboutGoalsSectionProps = {
   locale: Locale;
   dictionary: Dictionary;
+  data: GoalsView;
 };
 
 const SECTION_IMAGE = "/backgrounds/aboutus-page1.svg";
@@ -13,9 +15,8 @@ const TEXT_COLOR = "#133D3C";
 
 export function AboutGoalsSection({
   locale,
-  dictionary,
+  data,
 }: AboutGoalsSectionProps) {
-  const t = dictionary.about.goalsSection;
   const isAr = locale === "ar";
 
   return (
@@ -44,17 +45,17 @@ export function AboutGoalsSection({
           style={{ color: TEXT_COLOR }}
         >
           <p className="text-[16px] font-medium sm:text-[18px] lg:text-[24px]">
-            {t.title}
+            {data.eyebrow}
           </p>
           <h2 className="mt-2 text-[24px] font-semibold leading-tight sm:mt-3 sm:text-[30px] md:text-[34px] lg:text-[46px]">
-            {t.subtitle}
+            {data.title}
           </h2>
           <p className="mt-3 text-[14px] font-normal leading-7 sm:mt-4 sm:text-[16px] sm:leading-8 lg:text-[20px] lg:leading-9">
-            {t.description}
+            {data.description}
           </p>
 
           <ul className="mt-5 flex flex-col gap-3 sm:mt-6 sm:gap-3.5 lg:mt-8 lg:gap-4">
-            {t.points.map((point, index) => (
+            {data.points.map((point, index) => (
               <li key={`${point}-${index}`} className="flex items-start gap-3">
                 <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#133D3C] text-white sm:h-7 sm:w-7">
                   <Check

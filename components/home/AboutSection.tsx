@@ -5,13 +5,16 @@ import Link from "next/link";
 import { Mail, Phone } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { AboutTeaserView } from "@/lib/api/website-view";
+import { websiteAboutHref } from "@/lib/api/website-routes";
 
 type AboutSectionProps = {
   locale: Locale;
   dictionary: Dictionary;
+  data: AboutTeaserView;
 };
 
-export function AboutSection({ locale, dictionary }: AboutSectionProps) {
+export function AboutSection({ locale, dictionary, data }: AboutSectionProps) {
   const t = dictionary.home.aboutSection;
   const isAr = locale === "ar";
 
@@ -38,13 +41,13 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
           }`}
         >
           <p className="text-sm font-medium text-green-dark lg:text-base">
-            {t.eyebrow}
+            {data.eyebrow}
           </p>
           <h2 className="mt-2 max-w-2xl text-2xl font-bold leading-snug text-green-dark sm:mt-3 sm:text-3xl lg:text-[2.75rem] lg:leading-[1.25]">
-            {t.title}
+            {data.title}
           </h2>
           <p className="mt-3 max-w-2xl text-sm font-medium leading-7 text-muted sm:mt-4 sm:text-base sm:leading-8 lg:mt-5 lg:text-lg lg:leading-9">
-            {t.body}
+            {data.body}
           </p>
 
           <div className="mt-6 flex flex-col gap-4 sm:mt-7 sm:flex-row sm:flex-wrap sm:items-start sm:gap-6 lg:mt-8 lg:gap-8">
@@ -55,10 +58,10 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
               <div>
                 <p className="text-xs text-muted sm:text-sm">{t.emailLabel}</p>
                 <a
-                  href={`mailto:${t.email}`}
+                  href={`mailto:${data.email}`}
                   className="text-sm font-bold text-green-dark hover:text-gold lg:text-base"
                 >
-                  {t.email}
+                  {data.email}
                 </a>
               </div>
             </div>
@@ -70,11 +73,11 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
               <div>
                 <p className="text-xs text-muted sm:text-sm">{t.phoneLabel}</p>
                 <a
-                  href={`tel:${t.phone.replace(/-/g, "")}`}
+                  href={`tel:${data.phone.replace(/-/g, "")}`}
                   className="text-sm font-bold text-green-dark hover:text-gold lg:text-base"
                   dir="ltr"
                 >
-                  {t.phone}
+                  {data.phone}
                 </a>
               </div>
             </div>
@@ -82,7 +85,7 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
 
           <div className="mt-6 lg:mt-8">
             <Link
-              href={`/${locale}/home/about`}
+              href={websiteAboutHref(locale)}
               dir="ltr"
               className="inline-flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-sm font-semibold text-green-dark transition hover:brightness-105 lg:px-5 lg:py-3"
             >
@@ -95,11 +98,11 @@ export function AboutSection({ locale, dictionary }: AboutSectionProps) {
                     height={16}
                     className="h-4 w-4"
                   />
-                  <span>{t.cta}</span>
+                  <span>{data.cta}</span>
                 </>
               ) : (
                 <>
-                  <span>{t.cta}</span>
+                  <span>{data.cta}</span>
                   <Image
                     src="/arrows/green-left-arrow.svg"
                     alt=""

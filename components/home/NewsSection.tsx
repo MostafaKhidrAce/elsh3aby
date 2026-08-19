@@ -6,16 +6,16 @@ import { useLoginRequired } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { NewsCardView } from "@/lib/api/website-view";
 
 type NewsSectionProps = {
   locale: Locale;
-  dictionary: Dictionary;
+  dictionary?: Dictionary;
+  eyebrow: string;
+  title: string;
+  description: string;
+  cards: NewsCardView[];
 };
-
-const NEWS_IMAGES = [
-  "/dummy%20imgs/home%20page/features-image-1.jpg.svg",
-  "/dummy%20imgs/home%20page/image%2066.svg",
-] as const;
 
 function useVisibleCount() {
   const [count, setCount] = useState(3);
@@ -34,14 +34,19 @@ function useVisibleCount() {
   return count;
 }
 
-export function NewsSection({ locale, dictionary }: NewsSectionProps) {
-  const t = dictionary.home.newsSection;
+export function NewsSection({
+  locale,
+  eyebrow,
+  title,
+  description,
+  cards,
+}: NewsSectionProps) {
   const isAr = locale === "ar";
   const { isAuthenticated } = useAuth();
   const { openLoginRequired } = useLoginRequired();
   const visibleCount = useVisibleCount();
   const [index, setIndex] = useState(0);
-  const maxIndex = Math.max(0, t.cards.length - visibleCount);
+  const maxIndex = Math.max(0, cards.length - visibleCount);
 
   function handleCardClick() {
     if (!isAuthenticated) {
@@ -63,7 +68,7 @@ export function NewsSection({ locale, dictionary }: NewsSectionProps) {
 
   const canPrev = index > 0;
   const canNext = index < maxIndex;
-  const visibleCards = t.cards.slice(index, index + visibleCount);
+  const visibleCards = cards.slice(index, index + visibleCount);
 
   const navBtnBase =
     "inline-flex h-10 w-[52px] items-center justify-center rounded-full border border-white transition";
@@ -80,19 +85,19 @@ export function NewsSection({ locale, dictionary }: NewsSectionProps) {
             className="text-[18px] font-medium leading-normal sm:text-[20px] lg:text-[24px]"
             style={{ color: "#133D3C" }}
           >
-            {t.title}
+            {eyebrow}
           </p>
           <h2
             className="mt-2 text-[24px] font-bold leading-tight sm:mt-3 sm:text-[28px] md:text-[32px] lg:text-[46px]"
             style={{ color: "#133D3C" }}
           >
-            {t.subtitle}
+            {title}
           </h2>
           <p
             className="mx-auto mt-3 max-w-3xl text-[15px] font-medium leading-7 sm:mt-4 sm:text-[17px] sm:leading-8 lg:text-[20px] lg:leading-9"
             style={{ color: "#426463" }}
           >
-            {t.description}
+            {description}
           </p>
         </div>
 
@@ -143,17 +148,14 @@ export function NewsSection({ locale, dictionary }: NewsSectionProps) {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-          {visibleCards.map((card, cardOffset) => {
-            const absoluteIndex = index + cardOffset;
-            const imageSrc = NEWS_IMAGES[absoluteIndex % NEWS_IMAGES.length];
-
+          {visibleCards.map((card) => {
             return (
               <article
-                key={`${card.title}-${absoluteIndex}`}
+                key={card.id}
                 className="relative min-h-[340px] overflow-hidden rounded-[20px] sm:min-h-[400px] lg:min-h-[520px] xl:min-h-[560px]"
               >
                 <Image
-                  src={imageSrc}
+                  src={card.imageUrl}
                   alt={card.title}
                   fill
                   className="object-cover"

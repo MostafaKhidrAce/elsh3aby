@@ -7,24 +7,14 @@ import { HeroNav } from "@/components/layout/HeroNav";
 import { AnimatedStat } from "@/components/home/AnimatedStat";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { HomeHeroView } from "@/lib/api/website-view";
+import { websiteSignupHref } from "@/lib/api/website-routes";
 
 type HomeHeroProps = {
   locale: Locale;
   dictionary: Dictionary;
+  data: HomeHeroView;
 };
-
-const HERO_BACKGROUNDS = [
-  "/backgrounds/hero-section-bg-1.jpg",
-  "/backgrounds/hero-section-bg.svg",
-  "/backgrounds/hero-section-bg-3.jpg",
-] as const;
-
-const STATS = [
-  { key: "heritage" as const, value: 100 },
-  { key: "news" as const, value: 500 },
-  { key: "events" as const, value: 150 },
-  { key: "members" as const, value: 1250 },
-];
 
 function CtaArrow({ locale, src, alt = "" }: { locale: Locale; src: string; alt?: string }) {
   return (
@@ -64,16 +54,41 @@ function CtaContent({
   );
 }
 
-export function HomeHero({ locale, dictionary }: HomeHeroProps) {
-  const t = dictionary.home;
-  const [activeSlide, setActiveSlide] = useState(1);
+export function HomeHero({ locale, dictionary, data }: HomeHeroProps) {
+  const [activeSlide, setActiveSlide] = useState(0);
+  const cta1 = data.cta1.url ? (
+    <a
+      href={data.cta1.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      dir="ltr"
+      className="inline-flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-sm font-semibold text-green-dark transition hover:brightness-105 lg:px-5 lg:py-3"
+    >
+      <CtaContent
+        locale={locale}
+        label={data.cta1.label}
+        arrowSrc="/arrows/green-left-arrow.svg"
+      />
+    </a>
+  ) : (
+    <span
+      dir="ltr"
+      className="inline-flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-sm font-semibold text-green-dark lg:px-5 lg:py-3"
+    >
+      <CtaContent
+        locale={locale}
+        label={data.cta1.label}
+        arrowSrc="/arrows/green-left-arrow.svg"
+      />
+    </span>
+  );
 
   return (
     <div>
       <section className="relative overflow-hidden rounded-[1.25rem] text-white sm:rounded-[1.75rem]">
-        {HERO_BACKGROUNDS.map((src, index) => (
+        {data.backgrounds.map((src, index) => (
           <div
-            key={src}
+            key={`${src}-${index}`}
             className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out ${
               index === activeSlide ? "opacity-100" : "opacity-0"
             }`}
@@ -96,46 +111,34 @@ export function HomeHero({ locale, dictionary }: HomeHeroProps) {
 
           <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-3 pb-5 pt-8 text-center sm:px-5 sm:pt-10 lg:px-6 lg:pb-6 lg:pt-14">
             <h1 className="max-w-4xl text-2xl font-bold leading-snug sm:text-3xl md:text-4xl lg:text-[3.25rem]">
-              {t.title}
+              {data.title}
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-white/90 sm:mt-4 sm:text-base sm:leading-7 lg:mt-5 lg:text-lg lg:leading-8">
-              {t.subtitle}
+              {data.subtitle}
             </p>
 
             <div className="mt-6 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-center lg:mt-10">
-              <a
-                href="https://example.com/app-download"
-                target="_blank"
-                rel="noopener noreferrer"
-                dir="ltr"
-                className="inline-flex items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-sm font-semibold text-green-dark transition hover:brightness-105 lg:px-5 lg:py-3"
-              >
-                <CtaContent
-                  locale={locale}
-                  label={t.ctaDownload}
-                  arrowSrc="/arrows/green-left-arrow.svg"
-                />
-              </a>
+              {cta1}
               <Link
-                href={`/${locale}/signup`}
+                href={websiteSignupHref(locale)}
                 dir="ltr"
                 className="inline-flex items-center justify-center gap-2 rounded-md border border-white/80 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10 lg:px-5 lg:py-3"
               >
                 <CtaContent
                   locale={locale}
-                  label={t.ctaJoin}
+                  label={data.cta2.label}
                   arrowSrc="/arrows/white-left-arrow.svg"
                 />
               </Link>
             </div>
 
             <div className="mt-8 grid w-full grid-cols-2 gap-2.5 sm:mt-12 sm:grid-cols-4 sm:gap-4 lg:mt-16 lg:gap-5">
-              {STATS.map((stat) => (
+              {data.stats.map((stat) => (
                 <AnimatedStat
-                  key={stat.key}
+                  key={stat.id}
                   value={stat.value}
-                  label={t.stats[stat.key]}
-                  moreThan={t.moreThan}
+                  label={stat.label}
+                  moreThan={stat.moreThan}
                 />
               ))}
             </div>
@@ -162,7 +165,7 @@ export function HomeHero({ locale, dictionary }: HomeHeroProps) {
         role="tablist"
         aria-label="Hero background slides"
       >
-        {HERO_BACKGROUNDS.map((_, index) => {
+        {data.backgrounds.map((_, index) => {
           const isActive = index === activeSlide;
           return (
             <button

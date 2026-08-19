@@ -1,17 +1,18 @@
 import Image from "next/image";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { LineageView } from "@/lib/api/website-view";
 
 type AboutLineageSectionProps = {
   locale: Locale;
   dictionary: Dictionary;
+  data: LineageView;
 };
 
 export function AboutLineageSection({
   locale,
-  dictionary,
+  data,
 }: AboutLineageSectionProps) {
-  const t = dictionary.about.lineageSection;
   const isAr = locale === "ar";
 
   return (
@@ -39,13 +40,13 @@ export function AboutLineageSection({
           }`}
         >
           <p className="text-sm font-medium text-green-dark lg:text-base">
-            {t.eyebrow}
+            {data.eyebrow}
           </p>
           <h2 className="mt-2 max-w-2xl text-2xl font-bold leading-snug text-green-dark sm:mt-3 sm:text-3xl lg:text-[2.75rem] lg:leading-[1.25]">
-            {t.title}
+            {data.title}
           </h2>
           <div className="mt-3 flex max-w-2xl flex-col gap-3 sm:mt-4 sm:gap-4 lg:mt-5 lg:gap-5">
-            {t.body.map((paragraph, index) => (
+            {data.paragraphs.map((paragraph, index) => (
               <p
                 key={index}
                 className="text-sm font-medium leading-7 text-muted sm:text-base sm:leading-8 lg:text-lg lg:leading-9"

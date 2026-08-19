@@ -9,10 +9,14 @@ import Select, {
 } from "react-select";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { ContactFormView } from "@/lib/api/website-view";
+import { submitContactMessage } from "@/lib/api/website";
+import { toApiPhone } from "@/lib/api/localized";
 
 type ContactFormSectionProps = {
   locale: Locale;
   dictionary: Dictionary;
+  data: ContactFormView;
 };
 
 type MessageTypeOption = {
@@ -24,10 +28,6 @@ const LABEL = "#170F49";
 const GOLD = "#D5AF34";
 const FORM_BG = "#F6EFE7";
 const TITLE = "#133D3C";
-const COUNTRY_CODE = "+966";
-
-const MAP_EMBED_SRC =
-  "https://maps.google.com/maps?q=95+Nasser+Bin+Hawan+St,+Al+Rabwah,+Hafar+Al-Batin&hl=ar&z=15&output=embed";
 
 function SaudiFlag({ className }: { className?: string }) {
   return (
@@ -58,14 +58,18 @@ function DropdownIndicator(props: DropdownIndicatorProps<MessageTypeOption, fals
 export function ContactFormSection({
   locale,
   dictionary,
+  data,
 }: ContactFormSectionProps) {
   const t = dictionary.contact.formSection;
   const isAr = locale === "ar";
   const selectId = useId();
   const [messageType, setMessageType] = useState<MessageTypeOption | null>(null);
   const [messageTypeError, setMessageTypeError] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
+    "idle",
+  );
 
-  const options: MessageTypeOption[] = t.messageTypes;
+  const options: MessageTypeOption[] = data.messageTypes;
 
   const selectStyles: StylesConfig<MessageTypeOption, false> = {
     control: (base, state) => ({
@@ -145,7 +149,7 @@ export function ContactFormSection({
     }),
   };
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!messageType) {
       setMessageTypeError(true);
@@ -154,25 +158,38 @@ export function ContactFormSection({
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    console.log({
-      name: String(formData.get("name") ?? ""),
-      countryCode: COUNTRY_CODE,
-      phone: String(formData.get("phone") ?? ""),
-      messageType: messageType.value,
-      messageTypeLabel: messageType.label,
-      message: String(formData.get("message") ?? ""),
-    });
+    const messageTypeId = Number(messageType.value);
+    if (!Number.isFinite(messageTypeId)) {
+      setMessageTypeError(true);
+      return;
+    }
 
-    form.reset();
-    setMessageType(null);
-    setMessageTypeError(false);
+    setStatus("loading");
+    try {
+      await submitContactMessage(
+        {
+          name: String(formData.get("name") ?? ""),
+          phone: toApiPhone(String(formData.get("phone") ?? "")),
+          message_type_id: messageTypeId,
+          subject: messageType.label,
+          message: String(formData.get("message") ?? ""),
+        },
+        locale,
+      );
+      form.reset();
+      setMessageType(null);
+      setMessageTypeError(false);
+      setStatus("idle");
+    } catch {
+      setStatus("error");
+    }
   }
 
   const mapBlock = (
     <div className="relative aspect-[4/3] w-full min-h-[220px] overflow-hidden rounded-[16px] sm:aspect-auto sm:min-h-[300px] sm:rounded-[20px] lg:min-h-full lg:h-full">
       <iframe
         title={t.mapTitle}
-        src={MAP_EMBED_SRC}
+        src={data.mapEmbedUrl}
         className="absolute inset-0 h-full w-full border-0"
         loading="lazy"
         referrerPolicy="no-referrer-when-downgrade"
@@ -191,13 +208,13 @@ export function ContactFormSection({
         className="text-[24px] font-bold leading-tight sm:text-[32px] md:text-[36px] lg:text-[46px]"
         style={{ color: TITLE }}
       >
-        {t.title}
+        {data.title}
       </h2>
       <p
         className="mt-2 text-[14px] font-normal leading-6 sm:mt-3 sm:text-[17px] sm:leading-8 lg:text-[20px] lg:leading-9"
         style={{ color: TITLE }}
       >
-        {t.description}
+        {data.description || t.description}
       </p>
 
       <form
@@ -310,9 +327,14 @@ export function ContactFormSection({
           />
         </label>
 
+        {status === "error" ? (
+          <p className="text-[13px] font-medium text-[#E11D48]">{t.error}</p>
+        ) : null}
+
         <button
           type="submit"
-          className="mt-1 inline-flex h-12 w-full items-center justify-center rounded-[12px] text-[15px] font-bold text-[#133D3C] transition hover:brightness-105 sm:h-14 sm:text-[16px]"
+          disabled={status === "loading"}
+          className="mt-1 inline-flex h-12 w-full items-center justify-center rounded-[12px] text-[15px] font-bold text-[#133D3C] transition hover:brightness-105 disabled:opacity-70 sm:h-14 sm:text-[16px]"
           style={{ backgroundColor: GOLD }}
         >
           {t.submit}

@@ -1,0 +1,68 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { SecondaryHero } from "@/components/about/SecondaryHero";
+import { ContactFormSection } from "@/components/contact/ContactFormSection";
+import { ContactInfoSection } from "@/components/contact/ContactInfoSection";
+import type { Dictionary } from "@/lib/i18n/get-dictionary";
+import type { Locale } from "@/lib/i18n/config";
+import { getMessageTypes, getWebsiteContact } from "@/lib/api/website";
+import type { MessageType, WebsiteContactData } from "@/lib/api/website";
+import { toContactFormView, toContactInfoView } from "@/lib/api/website-view";
+
+type ContactPageClientProps = {
+  locale: Locale;
+  dictionary: Dictionary;
+};
+
+export function ContactPageClient({ locale, dictionary }: ContactPageClientProps) {
+  const [contact, setContact] = useState<WebsiteContactData | null>(null);
+  const [messageTypes, setMessageTypes] = useState<MessageType[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([getWebsiteContact(locale), getMessageTypes(locale)]).then(
+      ([nextContact, nextTypes]) => {
+        if (cancelled) return;
+        setContact(nextContact);
+        setMessageTypes(nextTypes);
+      },
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [locale]);
+
+  const t = dictionary.contact;
+  const info = toContactInfoView(locale, dictionary, contact);
+  const form = toContactFormView(locale, dictionary, contact, messageTypes);
+
+  return (
+    <div className="overflow-x-hidden bg-white p-2 sm:p-3 md:p-4 lg:p-6">
+      <SecondaryHero
+        locale={locale}
+        dictionary={dictionary}
+        title={info.heroTitle}
+        breadcrumbHome={t.breadcrumbHome}
+        breadcrumbCurrent={t.breadcrumbCurrent}
+        backgroundUrl={contact?.hero?.background_url}
+      />
+
+      <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
+        <ContactInfoSection
+          locale={locale}
+          dictionary={dictionary}
+          data={info}
+        />
+      </div>
+
+      <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
+        <ContactFormSection
+          locale={locale}
+          dictionary={dictionary}
+          data={form}
+        />
+      </div>
+    </div>
+  );
+}

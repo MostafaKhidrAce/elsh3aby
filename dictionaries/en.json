@@ -26,6 +26,8 @@
     "newsletterDesc": "We share important news and updates about the family",
     "newsletterPlaceholder": "Enter your email address",
     "newsletterSubmit": "Send",
+    "newsletterSuccess": "You have subscribed to the newsletter successfully.",
+    "newsletterError": "Could not subscribe. Please try again.",
     "addressTitle": "Address information",
     "address": "95 Nasser Bin Hawan St, Al Rabwah, Hafar Al-Batin",
     "menuTitle": "Main menu",
@@ -101,6 +103,7 @@
       "title": "Events and occasions",
       "description": "Stay up to date with upcoming events, celebrations, and meetings held throughout the year.",
       "loginCta": "Log in for more details",
+      "empty": "There are no published events right now.",
       "events": [
         {
           "title": "Wedding celebrations",
@@ -162,7 +165,8 @@
       "phone": "Phone",
       "message": "Write a message...",
       "submit": "Send message",
-      "success": "Your message was sent successfully. Thank you for reaching out."
+      "success": "Your message was sent successfully. Thank you for reaching out.",
+      "error": "Could not send your message. Please try again."
     }
   },
   "about": {
@@ -280,6 +284,7 @@
       "messagePlaceholder": "Enter message details",
       "submit": "Send",
       "success": "Your message was sent successfully. Thank you for reaching out.",
+      "error": "Could not send your message. Please try again.",
       "mapTitle": "Our location on the map"
     },
     "name": "Name",

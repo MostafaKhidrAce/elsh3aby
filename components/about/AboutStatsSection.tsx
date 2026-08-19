@@ -3,28 +3,28 @@
 import { useEffect, useRef, useState } from "react";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import type { QuickStatView } from "@/lib/api/website-view";
 
 type AboutStatsSectionProps = {
   locale: Locale;
   dictionary: Dictionary;
+  eyebrow: string;
+  title: string;
+  description: string;
+  items: QuickStatView[];
 };
-
-const STATS = [
-  { key: "total" as const, value: 3000 },
-  { key: "males" as const, value: 780 },
-  { key: "females" as const, value: 500 },
-  { key: "endowments" as const, value: 100 },
-];
 
 const MUTED_GOLD = "#D4C4A8";
 
 function AnimatedPlusStat({
   value,
   label,
+  suffix = "+",
   durationMs = 1600,
 }: {
   value: number;
   label: string;
+  suffix?: string;
   durationMs?: number;
 }) {
   const [count, setCount] = useState(0);
@@ -62,7 +62,8 @@ function AnimatedPlusStat({
         className="text-[28px] font-bold leading-none text-white sm:text-[36px] lg:text-[48px]"
         dir="ltr"
       >
-        {count.toLocaleString("en-US")}+
+        {count.toLocaleString("en-US")}
+        {suffix}
       </p>
       <p
         className="mt-2 max-w-[160px] text-[12px] font-medium leading-5 sm:mt-3 sm:max-w-[180px] sm:text-[13px] sm:leading-6 lg:text-[15px] lg:leading-7"
@@ -75,10 +76,11 @@ function AnimatedPlusStat({
 }
 
 export function AboutStatsSection({
-  dictionary,
+  eyebrow,
+  title,
+  description,
+  items,
 }: AboutStatsSectionProps) {
-  const t = dictionary.about.statsSection;
-
   return (
     <section
       id="about-stats-section"
@@ -91,27 +93,30 @@ export function AboutStatsSection({
             className="text-[14px] font-medium sm:text-[16px] lg:text-[20px]"
             style={{ color: MUTED_GOLD }}
           >
-            {t.eyebrow}
+            {eyebrow}
           </p>
           <h2 className="mt-2 text-[22px] font-bold leading-tight text-white sm:mt-3 sm:text-[28px] md:text-[34px] lg:text-[42px]">
-            {t.title}
+            {title}
           </h2>
-          <p
-            className="mx-auto mt-3 max-w-3xl text-[13px] font-normal leading-6 sm:mt-4 sm:text-[15px] sm:leading-7 lg:text-[18px] lg:leading-9"
-            style={{ color: MUTED_GOLD }}
-          >
-            {t.description}
-          </p>
+          {description ? (
+            <p
+              className="mx-auto mt-3 max-w-3xl text-[13px] font-normal leading-6 sm:mt-4 sm:text-[15px] sm:leading-7 lg:text-[18px] lg:leading-9"
+              style={{ color: MUTED_GOLD }}
+            >
+              {description}
+            </p>
+          ) : null}
         </div>
 
         <div className="my-6 h-px w-full bg-white/20 sm:my-8 lg:my-12" />
 
         <div className="grid grid-cols-2 gap-5 sm:gap-7 lg:grid-cols-4 lg:gap-6">
-          {STATS.map((stat) => (
+          {items.map((stat) => (
             <AnimatedPlusStat
-              key={stat.key}
+              key={stat.id}
               value={stat.value}
-              label={t.stats[stat.key]}
+              label={stat.label}
+              suffix={stat.suffix}
             />
           ))}
         </div>
