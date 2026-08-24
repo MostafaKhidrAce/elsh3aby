@@ -2,11 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Lock } from "lucide-react";
 import { AuthCardShell } from "@/components/auth/AuthCardShell";
 import { SignupSuccessModal } from "@/components/auth/SignupSuccessModal";
+import { getApiErrorMessage, resetPassword } from "@/lib/api/auth";
+import {
+  clearPasswordResetState,
+  fromQueryPasswordResetState,
+  loadPasswordResetState,
+} from "@/lib/auth/reset-flow";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
@@ -19,17 +25,40 @@ const GOLD = "#D5AF34";
 const INPUT_SHADOW = "0px 2px 6px 0px rgba(74, 58, 255, 0.1)";
 
 export function NewPasswordForm({ dictionary }: NewPasswordFormProps) {
+  const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";
   const t = dictionary.auth;
+  const phone = searchParams.get("phone");
+  const nationalIdParam = searchParams.get("national_id");
+  const queryState = useMemo(
+    () => fromQueryPasswordResetState(phone, nationalIdParam),
+    [phone, nationalIdParam],
+  );
+  const [resetState, setResetState] = useState(queryState);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+
+  useEffect(() => {
+    if (queryState) {
+      setResetState(queryState);
+      return;
+    }
+    const stored = loadPasswordResetState();
+    if (stored) {
+      setResetState(stored);
+      return;
+    }
+    router.replace(`/${locale}/forget-password`);
+  }, [locale, queryState, router]);
 
   useEffect(() => {
     if (!successOpen) return;
@@ -40,15 +69,31 @@ export function NewPasswordForm({ dictionary }: NewPasswordFormProps) {
     };
   }, [successOpen]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!resetState) return;
     if (password !== confirmPassword) {
-      setError(dictionary.common.required);
+      setError(t.passwordsMismatch);
       return;
     }
     setError("");
-    console.log({ passwordUpdated: true });
-    setSuccessOpen(true);
+    setLoading(true);
+    try {
+      await resetPassword(
+        {
+          password,
+          password_confirmation: confirmPassword,
+          national_id: resetState.national_id,
+        },
+        locale,
+      );
+      clearPasswordResetState();
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(getApiErrorMessage(err, t.errorGeneric));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -116,7 +161,8 @@ export function NewPasswordForm({ dictionary }: NewPasswordFormProps) {
             <button
               type="submit"
               dir="ltr"
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold transition hover:brightness-105 sm:h-14 sm:text-[15px]"
+              disabled={loading}
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-[12px] text-[14px] font-bold transition hover:brightness-105 disabled:opacity-60 sm:h-14 sm:text-[15px]"
               style={{ backgroundColor: GOLD, color: TEXT }}
             >
               {isAr ? (
@@ -128,11 +174,11 @@ export function NewPasswordForm({ dictionary }: NewPasswordFormProps) {
                     height={14}
                     className="h-3.5 w-3.5"
                   />
-                  <span>{t.updatePassword}</span>
+                  <span>{loading ? dictionary.common.loading : t.updatePassword}</span>
                 </>
               ) : (
                 <>
-                  <span>{t.updatePassword}</span>
+                  <span>{loading ? dictionary.common.loading : t.updatePassword}</span>
                   <Image
                     src="/arrows/green-left-arrow.svg"
                     alt=""

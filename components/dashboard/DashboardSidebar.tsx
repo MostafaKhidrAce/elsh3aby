@@ -132,8 +132,8 @@ export function DashboardSidebar({
     return patterns.some((pattern) => pathname.includes(pattern));
   }
 
-  function handleLogout() {
-    logout();
+  async function handleLogout() {
+    await logout();
     onNavigate?.();
     router.push(`/${locale}/home`);
   }

@@ -60,9 +60,9 @@ export function UserMenu({ locale, dictionary, onNavigate }: UserMenuProps) {
     };
   }, [open]);
 
-  function handleLogout() {
+  async function handleLogout() {
     setOpen(false);
-    logout();
+    await logout();
     onNavigate?.();
   }
 

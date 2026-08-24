@@ -1,5 +1,6 @@
 import { NewPasswordForm } from "@/components/auth/NewPasswordForm";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 
@@ -12,5 +13,15 @@ export default async function NewPasswordPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return <NewPasswordForm dictionary={dictionary} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="p-8 text-center text-muted">
+          {dictionary.common.loading}
+        </div>
+      }
+    >
+      <NewPasswordForm dictionary={dictionary} />
+    </Suspense>
+  );
 }

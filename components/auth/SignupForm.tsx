@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { FormEvent, useEffect, useId, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import {
   Calendar,
   ChevronDown,
+  Droplet,
   IdCard,
   Lock,
   Mail,
@@ -19,7 +20,17 @@ import Select, {
   type StylesConfig,
 } from "react-select";
 import { AuthFormShell } from "@/components/auth/AuthFormShell";
-import { SignupSuccessModal } from "@/components/auth/SignupSuccessModal";
+import {
+  BLOOD_TYPES,
+  getApiErrorMessage,
+  getFamilyBranches,
+  getWebPlayerId,
+  REGISTER_DEVICE_TYPE,
+  registerMember,
+  sendOtp,
+} from "@/lib/api/auth";
+import { pickLocalized, toApiPhone } from "@/lib/api/localized";
+import { savePasswordResetState } from "@/lib/auth/reset-flow";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
@@ -36,7 +47,7 @@ const TEXT = "#170F49";
 const GOLD = "#D5AF34";
 const BORDER = "#D5AF34";
 const INPUT_SHADOW = "0px 2px 6px 0px rgba(74, 58, 255, 0.1)";
-const COUNTRY_CODE = "+966";
+const NAME_LETTERS = /^[\p{L}\s]+$/u;
 
 const inputClassName =
   "h-12 w-full rounded-[12px] border border-[#D5AF34] bg-white text-[14px] font-medium outline-none transition placeholder:font-normal placeholder:text-[#9CA3AF] sm:h-[50px] sm:text-[15px]";
@@ -74,12 +85,15 @@ function DropdownIndicator(props: DropdownIndicatorProps<BranchOption, false>) {
 }
 
 export function SignupForm({ dictionary }: SignupFormProps) {
+  const router = useRouter();
   const params = useParams();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";
   const t = dictionary.auth;
   const selectId = useId();
+  const fileRef = useRef<HTMLInputElement | null>(null);
 
+  const [branchOptions, setBranchOptions] = useState<BranchOption[]>([]);
   const [familyBranch, setFamilyBranch] = useState<BranchOption | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -88,20 +102,34 @@ export function SignupForm({ dictionary }: SignupFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [nationalId, setNationalId] = useState("");
   const [birthDate, setBirthDate] = useState("");
+  const [bloodType, setBloodType] = useState("");
+  const [image, setImage] = useState<File | null>(null);
   const [gender, setGender] = useState<"male" | "female" | "">("");
   const [error, setError] = useState("");
-  const [successOpen, setSuccessOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!successOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    let cancelled = false;
+    (async () => {
+      try {
+        const branches = await getFamilyBranches(locale);
+        if (cancelled) return;
+        setBranchOptions(
+          branches.map((branch) => ({
+            value: String(branch.id),
+            label: pickLocalized(locale, branch.name_ar, branch.name_en),
+          })),
+        );
+      } catch (err) {
+        if (!cancelled) {
+          setError(getApiErrorMessage(err, t.errorGeneric));
+        }
+      }
+    })();
     return () => {
-      document.body.style.overflow = previousOverflow;
+      cancelled = true;
     };
-  }, [successOpen]);
-
-  const branchOptions: BranchOption[] = t.familyBranches;
+  }, [locale, t.errorGeneric]);
 
   const selectStyles: StylesConfig<BranchOption, false> = {
     control: (base, state) => ({
@@ -166,29 +194,56 @@ export function SignupForm({ dictionary }: SignupFormProps) {
     }),
   };
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!familyBranch || !gender) {
+    if (!familyBranch || !gender || !bloodType) {
       setError(dictionary.common.required);
       return;
     }
+    if (!NAME_LETTERS.test(name.trim())) {
+      setError(t.nameLettersOnly);
+      return;
+    }
     setError("");
-    console.log({
-      familyBranch: familyBranch.value,
-      name,
-      countryCode: COUNTRY_CODE,
-      phone,
-      email,
-      password,
-      nationalId,
-      birthDate,
-      gender,
-    });
-    setSuccessOpen(true);
+    setLoading(true);
+    const apiPhone = toApiPhone(phone);
+    const id = nationalId.trim();
+    try {
+      await registerMember(
+        {
+          name: name.trim(),
+          phone: apiPhone,
+          password,
+          family_branch_id: Number(familyBranch.value),
+          gender: gender === "male" ? 0 : 1,
+          player_id: getWebPlayerId(),
+          type: REGISTER_DEVICE_TYPE,
+          email: email.trim() || undefined,
+          national_id: id,
+          date_of_birth: birthDate || undefined,
+          blood_type: bloodType,
+          image,
+        },
+        locale,
+      );
+      try {
+        await sendOtp(apiPhone, locale, id);
+      } catch {
+        // Register may already have sent an OTP; continue to verify.
+      }
+      savePasswordResetState({ phone: apiPhone, national_id: id });
+      const query = new URLSearchParams({
+        phone: apiPhone,
+        national_id: id,
+      });
+      router.push(`/${locale}/signup/otp?${query.toString()}`);
+    } catch (err) {
+      setError(getApiErrorMessage(err, t.errorGeneric));
+      setLoading(false);
+    }
   }
 
   return (
-    <>
     <AuthFormShell
       locale={locale}
       title={t.signupTitle}
@@ -365,6 +420,67 @@ export function SignupForm({ dictionary }: SignupFormProps) {
           </label>
         </div>
 
+        <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 sm:gap-4">
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[14px] font-bold" style={{ color: TEXT }}>
+              {t.bloodType} <span className="text-[#E11D48]">*</span>
+            </span>
+            <div className="relative">
+              <Droplet
+                className="pointer-events-none absolute top-1/2 left-4 z-10 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]"
+                strokeWidth={1.75}
+              />
+              <select
+                value={bloodType}
+                onChange={(e) => setBloodType(e.target.value)}
+                required
+                className={`${inputClassName} appearance-none pl-11 pr-10`}
+                style={inputStyle}
+              >
+                <option value="">{t.bloodTypePlaceholder}</option>
+                {BLOOD_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                className="pointer-events-none absolute top-1/2 right-3 h-4 w-4 -translate-y-1/2 text-[#170F49]"
+                strokeWidth={1.75}
+              />
+            </div>
+          </label>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[14px] font-bold" style={{ color: TEXT }}>
+              {t.profileImage}
+            </span>
+            <div
+              className="flex h-12 items-center gap-2 rounded-[12px] border border-[#D5AF34] bg-white px-3 sm:h-[50px]"
+              style={{ boxShadow: INPUT_SHADOW }}
+            >
+              <span className="min-w-0 flex-1 truncate text-sm text-[#9CA3AF]">
+                {image?.name || t.chooseImage}
+              </span>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex shrink-0 items-center rounded-[10px] bg-[#D5AF34] px-3 py-1.5 text-sm font-semibold"
+                style={{ color: TEXT }}
+              >
+                {t.chooseImage}
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => setImage(e.target.files?.[0] ?? null)}
+              />
+            </div>
+          </div>
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <span className="text-[14px] font-bold" style={{ color: TEXT }}>
             {t.gender} <span className="text-[#E11D48]">*</span>
@@ -413,10 +529,11 @@ export function SignupForm({ dictionary }: SignupFormProps) {
 
         <button
           type="submit"
-          className="mt-1 inline-flex h-12 w-full items-center justify-center rounded-[12px] text-[15px] font-bold transition hover:brightness-105 sm:h-14 sm:text-[16px]"
+          disabled={loading}
+          className="mt-1 inline-flex h-12 w-full items-center justify-center rounded-[12px] text-[15px] font-bold transition hover:brightness-105 disabled:opacity-60 sm:h-14 sm:text-[16px]"
           style={{ backgroundColor: GOLD, color: TEXT }}
         >
-          {t.signupCta}
+          {loading ? dictionary.common.loading : t.signupCta}
         </button>
 
         <p className="text-center text-[13px] sm:text-[14px]" style={{ color: TEXT }}>
@@ -431,15 +548,5 @@ export function SignupForm({ dictionary }: SignupFormProps) {
         </p>
       </form>
     </AuthFormShell>
-
-    {successOpen ? (
-      <SignupSuccessModal
-        locale={locale}
-        title={t.signupSuccess.title}
-        description={t.signupSuccess.description}
-        loginLabel={t.signupSuccess.login}
-      />
-    ) : null}
-    </>
   );
 }

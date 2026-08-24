@@ -6,6 +6,12 @@ import { useParams, useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Lock, Mail } from "lucide-react";
 import { AuthFormShell } from "@/components/auth/AuthFormShell";
+import {
+  extractAuthToken,
+  getApiErrorMessage,
+  loginMember,
+  toAuthUser,
+} from "@/lib/api/auth";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -38,15 +44,34 @@ export function LoginForm({ dictionary }: LoginFormProps) {
   const [nationalId, setNationalId] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    login({
-      name: dictionary.nav.defaultMemberName,
-      emailOrPhone: nationalId,
-      avatarUrl: null,
-    });
-    router.push(`/${locale}/home`);
+    setError("");
+    setLoading(true);
+    try {
+      const payload = await loginMember(nationalId.trim(), password, locale);
+      const token = extractAuthToken(payload);
+      if (!token) {
+        setError(t.errorGeneric);
+        return;
+      }
+      login(
+        toAuthUser(payload, {
+          name: dictionary.nav.defaultMemberName,
+          emailOrPhone: nationalId.trim(),
+          avatarUrl: null,
+        }),
+        token,
+      );
+      router.push(`/${locale}/home`);
+    } catch (err) {
+      setError(getApiErrorMessage(err, t.errorGeneric));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -115,10 +140,13 @@ export function LoginForm({ dictionary }: LoginFormProps) {
           </Link>
         </div>
 
+        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+
         <button
           type="submit"
           dir="ltr"
-          className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[15px] font-bold transition hover:brightness-105 sm:h-14 sm:text-[16px]"
+          disabled={loading}
+          className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[15px] font-bold transition hover:brightness-105 disabled:opacity-60 sm:h-14 sm:text-[16px]"
           style={{ backgroundColor: GOLD, color: TEXT }}
         >
           {isAr ? (
@@ -130,11 +158,11 @@ export function LoginForm({ dictionary }: LoginFormProps) {
                 height={16}
                 className="h-4 w-4"
               />
-              <span>{t.login}</span>
+              <span>{loading ? dictionary.common.loading : t.login}</span>
             </>
           ) : (
             <>
-              <span>{t.login}</span>
+              <span>{loading ? dictionary.common.loading : t.login}</span>
               <Image
                 src="/arrows/green-left-arrow.svg"
                 alt=""

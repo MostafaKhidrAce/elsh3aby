@@ -6,34 +6,76 @@ import {
   FormEvent,
   KeyboardEvent,
   ClipboardEvent,
+  useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { AuthCardShell } from "@/components/auth/AuthCardShell";
+import { SignupSuccessModal } from "@/components/auth/SignupSuccessModal";
+import { getApiErrorMessage, sendOtp, verifyOtp } from "@/lib/api/auth";
+import {
+  fromQueryPasswordResetState,
+  loadPasswordResetState,
+  savePasswordResetState,
+} from "@/lib/auth/reset-flow";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
 type OtpFormProps = {
   dictionary: Dictionary;
+  purpose?: "reset" | "signup";
 };
 
 const TEXT = "#170F49";
 const GOLD = "#D5AF34";
 const INPUT_SHADOW = "0px 2px 6px 0px rgba(74, 58, 255, 0.1)";
-const OTP_LENGTH = 6;
+const OTP_LENGTH = 4;
 
-export function OtpForm({ dictionary }: OtpFormProps) {
+export function OtpForm({ dictionary, purpose = "reset" }: OtpFormProps) {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";
-  const target = searchParams.get("target") ?? "";
   const t = dictionary.auth;
+  const isSignup = purpose === "signup";
+  const phone = searchParams.get("phone");
+  const nationalId = searchParams.get("national_id");
+  const queryState = useMemo(
+    () => fromQueryPasswordResetState(phone, nationalId),
+    [phone, nationalId],
+  );
+  const [resetState, setResetState] = useState(queryState);
 
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(""));
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [successOpen, setSuccessOpen] = useState(false);
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+
+  useEffect(() => {
+    if (queryState) {
+      setResetState(queryState);
+      return;
+    }
+    const stored = loadPasswordResetState();
+    if (stored) {
+      setResetState(stored);
+      return;
+    }
+    router.replace(isSignup ? `/${locale}/signup` : `/${locale}/forget-password`);
+  }, [isSignup, locale, queryState, router]);
+
+  useEffect(() => {
+    if (!successOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [successOpen]);
 
   function focusIndex(index: number) {
     const el = inputsRef.current[index];
@@ -93,21 +135,46 @@ export function OtpForm({ dictionary }: OtpFormProps) {
     focusIndex(Math.min(pasted.length, OTP_LENGTH - 1));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!resetState) return;
     const code = digits.join("");
     if (code.length !== OTP_LENGTH) {
       setError(dictionary.common.required);
       return;
     }
-    // Dummy auth: any 6-digit OTP is accepted
-    console.log({ otp: code, target });
-    const query = target ? `?target=${encodeURIComponent(target)}` : "";
-    router.push(`/${locale}/forget-password/new-password${query}`);
+    setError("");
+    setLoading(true);
+    try {
+      await verifyOtp(resetState.phone, code, locale);
+      if (isSignup) {
+        setSuccessOpen(true);
+        return;
+      }
+      savePasswordResetState(resetState);
+      const query = new URLSearchParams({
+        phone: resetState.phone,
+        national_id: resetState.national_id,
+      });
+      router.push(`/${locale}/forget-password/new-password?${query.toString()}`);
+    } catch (err) {
+      setError(getApiErrorMessage(err, t.errorGeneric));
+    } finally {
+      setLoading(false);
+    }
   }
 
-  function handleResend() {
-    console.log({ resendOtp: true, target });
+  async function handleResend() {
+    if (!resetState || resending) return;
+    setError("");
+    setResending(true);
+    try {
+      await sendOtp(resetState.phone, locale, resetState.national_id);
+    } catch (err) {
+      setError(getApiErrorMessage(err, t.errorGeneric));
+    } finally {
+      setResending(false);
+    }
   }
 
   function renderBox(index: number) {
@@ -133,6 +200,7 @@ export function OtpForm({ dictionary }: OtpFormProps) {
   }
 
   return (
+    <>
     <AuthCardShell
       locale={locale}
       title={t.otpTitle}
@@ -151,11 +219,9 @@ export function OtpForm({ dictionary }: OtpFormProps) {
           <div dir="ltr" className="flex items-center justify-center gap-2 sm:gap-2.5">
             {renderBox(0)}
             {renderBox(1)}
-            {renderBox(2)}
             <span className="px-1 text-[20px] font-bold text-[#9CA3AF]">-</span>
+            {renderBox(2)}
             {renderBox(3)}
-            {renderBox(4)}
-            {renderBox(5)}
           </div>
         </div>
 
@@ -164,7 +230,8 @@ export function OtpForm({ dictionary }: OtpFormProps) {
         <button
           type="submit"
           dir="ltr"
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[15px] font-bold transition hover:brightness-105 sm:h-14 sm:text-[16px]"
+          disabled={loading}
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[12px] text-[15px] font-bold transition hover:brightness-105 disabled:opacity-60 sm:h-14 sm:text-[16px]"
           style={{ backgroundColor: GOLD, color: TEXT }}
         >
           {isAr ? (
@@ -176,11 +243,11 @@ export function OtpForm({ dictionary }: OtpFormProps) {
                 height={16}
                 className="h-4 w-4"
               />
-              <span>{t.verify}</span>
+              <span>{loading ? dictionary.common.loading : t.verify}</span>
             </>
           ) : (
             <>
-              <span>{t.verify}</span>
+              <span>{loading ? dictionary.common.loading : t.verify}</span>
               <Image
                 src="/arrows/green-left-arrow.svg"
                 alt=""
@@ -195,12 +262,22 @@ export function OtpForm({ dictionary }: OtpFormProps) {
         <button
           type="button"
           onClick={handleResend}
-          className="text-center text-[13px] font-medium hover:underline sm:text-[14px]"
+          disabled={resending}
+          className="text-center text-[13px] font-medium hover:underline disabled:opacity-60 sm:text-[14px]"
           style={{ color: TEXT }}
         >
-          {t.otpResend}
+          {resending ? dictionary.common.loading : t.otpResend}
         </button>
       </form>
     </AuthCardShell>
+    {successOpen ? (
+      <SignupSuccessModal
+        locale={locale}
+        title={t.signupSuccess.title}
+        description={t.signupSuccess.description}
+        loginLabel={t.signupSuccess.login}
+      />
+    ) : null}
+    </>
   );
 }

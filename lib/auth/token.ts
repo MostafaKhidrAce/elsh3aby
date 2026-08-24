@@ -4,6 +4,8 @@ const USER_KEY = "elsh3aby_user";
 export type AuthUser = {
   name: string;
   emailOrPhone: string;
+  phone?: string | null;
+  email?: string | null;
   avatarUrl?: string | null;
 };
 

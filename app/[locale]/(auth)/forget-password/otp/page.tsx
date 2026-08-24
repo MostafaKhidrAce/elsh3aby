@@ -21,7 +21,7 @@ export default async function OtpPage({
         </div>
       }
     >
-      <OtpForm dictionary={dictionary} />
+      <OtpForm dictionary={dictionary} purpose="reset" />
     </Suspense>
   );
 }
