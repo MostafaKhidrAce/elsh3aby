@@ -15,6 +15,8 @@ export type ExcellencePraise = {
 export type DummyExcellence = {
   id: string;
   category: Exclude<ExcellenceCategoryId, "all">;
+  typeId?: number;
+  typeName?: string;
   name: string;
   nameEn: string;
   title: string;

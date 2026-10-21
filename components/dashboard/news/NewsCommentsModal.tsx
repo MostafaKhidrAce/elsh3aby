@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRight, UserRound } from "lucide-react";
-import type { DummyNewsComment } from "@/lib/dashboard/dummy-news";
+import type { NewsCommentView } from "@/lib/api/news";
 import type { Locale } from "@/lib/i18n/config";
 
 type NewsCommentsModalProps = {
@@ -11,7 +11,7 @@ type NewsCommentsModalProps = {
   locale: Locale;
   title: string;
   addCommentLabel: string;
-  comments: DummyNewsComment[];
+  comments: NewsCommentView[];
   onClose: () => void;
   onAddComment: () => void;
 };

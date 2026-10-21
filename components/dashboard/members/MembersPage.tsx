@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, Users } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -8,10 +8,12 @@ import { DashboardItemsEmptyState } from "@/components/dashboard/DashboardItemsE
 import { MemberCard } from "@/components/dashboard/members/MemberCard";
 import { MemberDetailsModal } from "@/components/dashboard/members/MemberDetailsModal";
 import { PreviousBoardCard } from "@/components/dashboard/members/PreviousBoardCard";
-import {
-  CURRENT_BOARD_MEMBERS,
-  PREVIOUS_BOARDS,
-  getMemberById,
+import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
+import { getCurrentBoard, getPreviousBoards } from "@/lib/api/councils";
+import { useAuth } from "@/lib/auth/auth-context";
+import type {
+  DummyBoardMember,
+  DummyPreviousBoard,
 } from "@/lib/dashboard/dummy-members";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -39,19 +41,38 @@ function MembersPageInner({ locale, dictionary }: MembersPageProps) {
   );
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { token, isReady } = useAuth();
+  const [currentMembers, setCurrentMembers] = useState<DummyBoardMember[]>([]);
+  const [previousBoards, setPreviousBoards] = useState<DummyPreviousBoard[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!isReady || !token) return;
+    void Promise.all([
+      getCurrentBoard(locale, token),
+      getPreviousBoards(locale, token),
+    ])
+      .then(([current, previous]) => {
+        setCurrentMembers(current.members);
+        setPreviousBoards(previous);
+      })
+      .finally(() => setLoading(false));
+  }, [isReady, token, locale]);
 
   const filteredCurrent = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return CURRENT_BOARD_MEMBERS.filter((member) => {
+    return currentMembers.filter((member) => {
       if (!q) return true;
       return [member.name, member.nameEn, member.role, member.roleEn]
         .join(" ")
         .toLowerCase()
         .includes(q);
     });
-  }, [query]);
+  }, [query, currentMembers]);
 
-  const selected = selectedId ? (getMemberById(selectedId) ?? null) : null;
+  const selected = selectedId
+    ? (currentMembers.find((member) => member.id === selectedId) ?? null)
+    : null;
 
   function changeTab(next: TabId) {
     setTab(next);
@@ -109,7 +130,13 @@ function MembersPageInner({ locale, dictionary }: MembersPageProps) {
             })}
           </div>
 
-          {tab === "current" ? (
+          {loading ? (
+            <DashboardFetchState
+              loading
+              error={null}
+              loadingLabel={dictionary.common.loading}
+            />
+          ) : tab === "current" ? (
             <>
               <div className="flex w-full justify-center">
                 <label className="relative block w-full max-w-md min-w-0">
@@ -148,7 +175,7 @@ function MembersPageInner({ locale, dictionary }: MembersPageProps) {
             </>
           ) : (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {PREVIOUS_BOARDS.map((board) => (
+              {previousBoards.map((board) => (
                 <PreviousBoardCard
                   key={board.id}
                   board={board}

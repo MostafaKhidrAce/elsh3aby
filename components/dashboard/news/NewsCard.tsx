@@ -2,11 +2,11 @@
 
 import Link from "next/link";
 import { UserRound } from "lucide-react";
-import type { DummyNewsItem } from "@/lib/dashboard/dummy-news";
+import type { NewsCardView } from "@/lib/api/news";
 import type { Locale } from "@/lib/i18n/config";
 
 type NewsCardProps = {
-  item: DummyNewsItem;
+  item: NewsCardView;
   locale: Locale;
 };
 

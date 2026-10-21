@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Select, { components, type StylesConfig, type DropdownIndicatorProps } from "react-select";
@@ -17,6 +17,12 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
+import { getFamilyBranches } from "@/lib/api/auth";
+import { ApiError } from "@/lib/api/client";
+import { getEventTypes } from "@/lib/api/catalog";
+import { createEvent } from "@/lib/api/events";
+import { pickLocalized, toApiPhone } from "@/lib/api/localized";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -50,14 +56,15 @@ const cardClass =
 
 export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
   const t = dictionary.dashboard.eventsPage;
-  const auth = dictionary.auth;
   const isAr = locale === "ar";
   const router = useRouter();
+  const { token } = useAuth();
   const branchSelectId = useId();
   const typeSelectId = useId();
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [fullName, setFullName] = useState("");
+  const [fullNameAr, setFullNameAr] = useState("");
   const [branch, setBranch] = useState<Option | null>(null);
   const [mobile, setMobile] = useState("");
   const [descAr, setDescAr] = useState("");
@@ -67,15 +74,36 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
   const [timeFrom, setTimeFrom] = useState("");
   const [timeTo, setTimeTo] = useState("");
   const [geo, setGeo] = useState("");
-  const [fileName, setFileName] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [branchOptions, setBranchOptions] = useState<Option[]>([]);
+  const [typeOptions, setTypeOptions] = useState<Option[]>([]);
 
-  const branchOptions: Option[] = auth.familyBranches;
-  const typeOptions: Option[] = [
-    { value: "wedding", label: t.categoryWedding },
-    { value: "meetings", label: t.categoryMeetings },
-  ];
+  useEffect(() => {
+    void getFamilyBranches(locale)
+      .then((items) =>
+        setBranchOptions(
+          items.map((item) => ({
+            value: String(item.id),
+            label: pickLocalized(locale, item.name_ar, item.name_en),
+          })),
+        ),
+      )
+      .catch(() => undefined);
+    if (!token) return;
+    void getEventTypes(locale, token)
+      .then((items) =>
+        setTypeOptions(
+          items.map((item) => ({
+            value: String(item.id),
+            label: pickLocalized(locale, item.name_ar, item.name_en, item.name || ""),
+          })),
+        ),
+      )
+      .catch(() => undefined);
+  }, [locale, token]);
 
   const selectStyles: StylesConfig<Option, false> = {
     control: (base, state) => ({
@@ -132,27 +160,50 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
     }),
   };
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!fullName.trim() || !branch || !mobile.trim() || !eventType) {
+    if (
+      !fullName.trim() ||
+      !fullNameAr.trim() ||
+      !branch ||
+      !mobile.trim() ||
+      !eventType ||
+      !date ||
+      !token
+    ) {
       setError(dictionary.common.required);
       return;
     }
     setError("");
-    console.log({
-      fullName,
-      branch: branch.value,
-      mobile,
-      descAr,
-      descEn,
-      eventType: eventType.value,
-      date,
-      timeFrom,
-      timeTo,
-      geo,
-      fileName,
-    });
-    setSuccessOpen(true);
+    setSubmitting(true);
+    try {
+      await createEvent(
+        {
+          full_name: fullName.trim(),
+          full_name_ar: fullNameAr.trim(),
+          family_branch_id: Number(branch.value),
+          phone: toApiPhone(mobile),
+          event_date_calendar: "gregorian",
+          date_from: date,
+          date_to: date,
+          time_from: timeFrom || "00:00",
+          time_to: timeTo || timeFrom || "00:00",
+          description: descEn.trim() || descAr.trim(),
+          description_ar: descAr.trim() || descEn.trim(),
+          location_title: geo.trim(),
+          location_address: geo.trim(),
+          type_id: Number(eventType.value),
+          gallery: files,
+        },
+        locale,
+        token,
+      );
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const labelClass = "text-[14px] font-bold";
@@ -204,6 +255,26 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
             <div className="grid gap-4 md:grid-cols-2">
               <label className={fieldGap}>
                 <span className={labelClass} style={{ color: TEXT }}>
+                  {t.fullNameAr}
+                </span>
+                <div className="relative">
+                  <User
+                    className="pointer-events-none absolute top-1/2 left-4 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]"
+                    strokeWidth={1.75}
+                  />
+                  <input
+                    required
+                    value={fullNameAr}
+                    onChange={(e) => setFullNameAr(e.target.value)}
+                    placeholder={t.fullNameArPlaceholder}
+                    className={`${inputClassName} pl-12 pr-4 ${isAr ? "text-right" : "text-left"}`}
+                    style={{ color: TEXT, boxShadow: INPUT_SHADOW }}
+                  />
+                </div>
+              </label>
+
+              <label className={fieldGap}>
+                <span className={labelClass} style={{ color: TEXT }}>
                   {t.fullName}
                 </span>
                 <div className="relative">
@@ -218,9 +289,13 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
                     placeholder={t.fullNamePlaceholder}
                     className={`${inputClassName} pl-12 pr-4 ${isAr ? "text-right" : "text-left"}`}
                     style={{ color: TEXT, boxShadow: INPUT_SHADOW }}
+                    dir="ltr"
                   />
                 </div>
               </label>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
 
               <label className={fieldGap}>
                 <span className={labelClass} style={{ color: TEXT }}>
@@ -409,7 +484,7 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
                 style={{ boxShadow: INPUT_SHADOW }}
               >
                 <span className="min-w-0 flex-1 truncate text-sm text-[#9CA3AF]">
-                  {fileName || t.attachmentPlaceholder}
+                  {files.length ? files.map((file) => file.name).join(", ") : t.attachmentPlaceholder}
                 </span>
                 <button
                   type="button"
@@ -421,10 +496,11 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
                 <input
                   ref={fileRef}
                   type="file"
+                  multiple
+                  accept="image/*"
                   className="hidden"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    setFileName(file?.name ?? "");
+                    setFiles(Array.from(e.target.files ?? []));
                   }}
                 />
               </div>
@@ -439,9 +515,10 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
             <div className="flex justify-center pt-2">
               <button
                 type="submit"
-                className="inline-flex min-w-[220px] items-center justify-center rounded-[12px] bg-[#D5AF34] px-8 py-3.5 text-base font-bold text-white transition hover:brightness-95"
+                disabled={submitting}
+                className="inline-flex min-w-[220px] items-center justify-center rounded-[12px] bg-[#D5AF34] px-8 py-3.5 text-base font-bold text-white transition hover:brightness-95 disabled:opacity-60"
               >
-                {t.submitEvent}
+                {submitting ? dictionary.common.loading : t.submitEvent}
               </button>
             </div>
           </form>

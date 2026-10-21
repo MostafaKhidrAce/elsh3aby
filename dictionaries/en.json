@@ -372,7 +372,10 @@
   },
   "common": {
     "loading": "Loading...",
-    "required": "This field is required"
+    "required": "This field is required",
+    "loadMore": "Load more",
+    "retry": "Retry",
+    "loadError": "Could not load data. Please try again."
   },
   "dashboard": {
     "backHome": "Back to home",
@@ -402,6 +405,8 @@
       "filter": "Filter",
       "remind": "Remind me of the event",
       "cancelRemind": "Cancel reminder",
+      "rateEvent": "Rate event",
+      "rated": "Rated",
       "seeMore": "See more",
       "seeLess": "See less",
       "bookedBy": "Booked by",
@@ -441,8 +446,10 @@
       "commentSuccessDescription": "Thank you for participating. Your comment was sent successfully and will be reviewed by administration before publishing.",
       "ok": "OK",
       "addEventFormTitle": "Form to add a new event",
-      "fullName": "Full name",
-      "fullNamePlaceholder": "Type your name",
+      "fullName": "Full name (English)",
+      "fullNamePlaceholder": "Type the English name",
+      "fullNameAr": "Full name (Arabic)",
+      "fullNameArPlaceholder": "Type the Arabic name",
       "branch": "Branch",
       "branchPlaceholder": "Choose your branch",
       "mobile": "Mobile number",

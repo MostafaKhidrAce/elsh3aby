@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Select, {
@@ -19,6 +19,11 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
+import { ApiError } from "@/lib/api/client";
+import { getPublishTypes } from "@/lib/api/catalog";
+import { createPublishRequest } from "@/lib/api/requests";
+import { pickLocalized } from "@/lib/api/localized";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -69,7 +74,23 @@ export function AddNewsPublishForm({
   const [error, setError] = useState("");
   const [successOpen, setSuccessOpen] = useState(false);
 
-  const typeOptions: Option[] = t.newsPublishTypes;
+  const { token } = useAuth();
+  const [typeOptions, setTypeOptions] = useState<Option[]>([]);
+  const [attachment, setAttachment] = useState<File | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    void getPublishTypes(locale, token)
+      .then((items) =>
+        setTypeOptions(
+          items.map((item) => ({
+            value: String(item.id),
+            label: pickLocalized(locale, item.name_ar, item.name_en, item.name || ""),
+          })),
+        ),
+      )
+      .catch(() => undefined);
+  }, [locale, token]);
   const requestsHref = `/${locale}/dashboard/requests`;
   const labelClass = "text-[14px] font-bold";
   const fieldGap = "flex flex-col gap-1.5";
@@ -121,23 +142,31 @@ export function AddNewsPublishForm({
     }),
   };
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!newsType || !advertiser.trim() || !region.trim() || !description.trim()) {
+    if (!newsType || !advertiser.trim() || !region.trim() || !description.trim() || !token) {
       setError(dictionary.common.required);
       return;
     }
     setError("");
-    console.log({
-      newsType: newsType.value,
-      advertiser,
-      region,
-      time,
-      date,
-      description,
-      fileName,
-    });
-    setSuccessOpen(true);
+    try {
+      await createPublishRequest(
+        {
+          advertiser_name: advertiser.trim(),
+          request_type_id: Number(newsType.value),
+          region_city: region.trim(),
+          event_date: date,
+          event_time: time,
+          description: description.trim(),
+          attachment,
+        },
+        locale,
+        token,
+      );
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   return (
@@ -315,6 +344,7 @@ export function AddNewsPublishForm({
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
+                    setAttachment(file ?? null);
                     setFileName(file?.name ?? "");
                   }}
                 />

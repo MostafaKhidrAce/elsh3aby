@@ -14,6 +14,9 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
 import { AddConsultReplyModal } from "@/components/dashboard/requests/AddConsultReplyModal";
+import { ApiError } from "@/lib/api/client";
+import { replyToConsultation } from "@/lib/api/requests";
+import { useAuth } from "@/lib/auth/auth-context";
 import type {
   ConsultReply,
   DummyRequest,
@@ -46,6 +49,7 @@ export function ConsultRequestDetailsPage({
 }: ConsultRequestDetailsPageProps) {
   const t = dictionary.dashboard.requestsPage;
   const isAr = locale === "ar";
+  const { token } = useAuth();
   const requestsHref = `/${locale}/dashboard/requests`;
 
   const typeLabel =
@@ -70,46 +74,25 @@ export function ConsultRequestDetailsPage({
         ? t.detailStatusResponded
         : t.statusRejected;
 
-  function handlePublishReply(text: string, fileName?: string) {
-    const now = new Date();
-    const dateLabelAr = now.toLocaleString("ar-SA", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    const dateLabelEn = now.toLocaleString("en-GB", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const next: ConsultReply = {
-      id: `local-${Date.now()}`,
-      author: "محمد بن عبدالعزيز",
-      authorEn: "Mohammed bin Abdulaziz",
-      dateLabel: dateLabelAr,
-      dateLabelEn,
-      text,
-      textEn: text,
-      attachments: fileName
-        ? [
-            {
-              id: `f-${Date.now()}`,
-              name: fileName,
-              nameEn: fileName,
-              kind: fileName.toLowerCase().endsWith(".pdf") ? "pdf" : "image",
-            },
-          ]
-        : undefined,
-    };
-
-    setReplies((prev) => [...prev, next]);
-    setReplyModalOpen(false);
-    console.log("consult reply", { text, fileName });
+  async function handlePublishReply(text: string) {
+    if (!token) return;
+    try {
+      await replyToConsultation(item.id, text, locale, token);
+      const now = new Date();
+      const next: ConsultReply = {
+        id: `local-${Date.now()}`,
+        author: isAr ? "أنت" : "You",
+        authorEn: "You",
+        dateLabel: now.toLocaleString("ar-SA"),
+        dateLabelEn: now.toLocaleString("en-GB"),
+        text,
+        textEn: text,
+      };
+      setReplies((prev) => [...prev, next]);
+      setReplyModalOpen(false);
+    } catch (err) {
+      console.error(err instanceof ApiError ? err.message : err);
+    }
   }
 
   return (

@@ -1,12 +1,16 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Clock, Link2, MapPin, User } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
+import { ApiError } from "@/lib/api/client";
+import { getDiscountTypes } from "@/lib/api/catalog";
+import { createDiscountOffer } from "@/lib/api/requests";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -42,38 +46,58 @@ export function AddOfferForm({ locale, dictionary }: AddOfferFormProps) {
   const [link, setLink] = useState("");
   const [description, setDescription] = useState("");
   const [fileName, setFileName] = useState("");
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const [typeId, setTypeId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [successOpen, setSuccessOpen] = useState(false);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    if (!token) return;
+    void getDiscountTypes(locale, token)
+      .then((types) => setTypeId(types[0]?.id ?? null))
+      .catch(() => undefined);
+  }, [locale, token]);
 
   const labelClass = "text-[14px] font-bold";
   const fieldGap = "flex flex-col gap-1.5";
   const requestsHref = `/${locale}/dashboard/requests`;
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (
       !advertiser.trim() ||
       !store.trim() ||
       !title.trim() ||
       !region.trim() ||
-      !description.trim()
+      !description.trim() ||
+      !token
     ) {
       setError(dictionary.common.required);
       return;
     }
     setError("");
-    console.log({
-      advertiser,
-      store,
-      title,
-      region,
-      timeFrom,
-      timeTo,
-      link,
-      description,
-      fileName,
-    });
-    setSuccessOpen(true);
+    try {
+      await createDiscountOffer(
+        {
+          advertiser_name: advertiser.trim(),
+          store_activity_name: store.trim(),
+          discount_type_id: typeId ?? 1,
+          region_city: region.trim(),
+          start_date: timeFrom,
+          end_date: timeTo,
+          description: description.trim(),
+          redemption_link: link.trim() || undefined,
+          offer_title: title.trim(),
+          attachment,
+        },
+        locale,
+        token,
+      );
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   return (
@@ -192,9 +216,9 @@ export function AddOfferForm({ locale, dictionary }: AddOfferFormProps) {
                     strokeWidth={1.75}
                   />
                   <input
+                    type="date"
                     value={timeFrom}
                     onChange={(e) => setTimeFrom(e.target.value)}
-                    placeholder={t.timePlaceholder}
                     className={`${inputClassName} pl-12 pr-4 ${isAr ? "text-right" : "text-left"}`}
                     style={{ color: TEXT, borderColor: BORDER }}
                   />
@@ -211,9 +235,9 @@ export function AddOfferForm({ locale, dictionary }: AddOfferFormProps) {
                     strokeWidth={1.75}
                   />
                   <input
+                    type="date"
                     value={timeTo}
                     onChange={(e) => setTimeTo(e.target.value)}
-                    placeholder={t.timePlaceholder}
                     className={`${inputClassName} pl-12 pr-4 ${isAr ? "text-right" : "text-left"}`}
                     style={{ color: TEXT, borderColor: BORDER }}
                   />
@@ -278,6 +302,7 @@ export function AddOfferForm({ locale, dictionary }: AddOfferFormProps) {
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
+                    setAttachment(file ?? null);
                     setFileName(file?.name ?? "");
                   }}
                 />

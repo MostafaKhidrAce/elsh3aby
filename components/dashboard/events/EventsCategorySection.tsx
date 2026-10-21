@@ -1,34 +1,29 @@
 "use client";
 
-import { Gem, Users } from "lucide-react";
+import { Users } from "lucide-react";
 import { EventCard } from "@/components/dashboard/events/EventCard";
-import type { DummyEvent, EventCategoryId } from "@/lib/dashboard/dummy-events";
+import type { EventCardView } from "@/lib/api/events";
 import type { Locale } from "@/lib/i18n/config";
 
 type EventsCategorySectionProps = {
-  categoryId: EventCategoryId;
+  categoryId: string;
   title: string;
-  events: DummyEvent[];
+  events: EventCardView[];
   locale: Locale;
   expanded: boolean;
-  onToggleExpand: (categoryId: EventCategoryId) => void;
+  onToggleExpand: (categoryId: string) => void;
   seeMoreLabel: string;
   seeLessLabel: string;
   remindLabel: string;
   cancelRemindLabel: string;
   bookedByLabel: string;
-  remindedIds: Set<string>;
-  onToggleRemind: (id: string) => void;
+  rateLabel: string;
+  ratedLabel: string;
+  onToggleRemind: (id: number) => void;
+  onRate: (id: number, rating: number) => void;
 };
 
 const VISIBLE_COUNT = 3;
-
-function CategoryIcon({ categoryId }: { categoryId: EventCategoryId }) {
-  if (categoryId === "wedding") {
-    return <Gem className="h-4 w-4 text-white" strokeWidth={2} />;
-  }
-  return <Users className="h-4 w-4 text-white" strokeWidth={2} />;
-}
 
 export function EventsCategorySection({
   categoryId,
@@ -42,8 +37,10 @@ export function EventsCategorySection({
   remindLabel,
   cancelRemindLabel,
   bookedByLabel,
-  remindedIds,
+  rateLabel,
+  ratedLabel,
   onToggleRemind,
+  onRate,
 }: EventsCategorySectionProps) {
   if (events.length === 0) return null;
 
@@ -54,7 +51,7 @@ export function EventsCategorySection({
     <section className="space-y-4">
       <div className="flex items-center gap-2.5">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#D5AF34]">
-          <CategoryIcon categoryId={categoryId} />
+          <Users className="h-4 w-4 text-white" strokeWidth={2} />
         </span>
         <h3 className="text-lg font-bold text-[#170F49]">
           {title}{" "}
@@ -71,8 +68,11 @@ export function EventsCategorySection({
             remindLabel={remindLabel}
             cancelRemindLabel={cancelRemindLabel}
             bookedByLabel={bookedByLabel}
-            reminded={remindedIds.has(event.id)}
+            rateLabel={rateLabel}
+            ratedLabel={ratedLabel}
+            reminded={event.isReminderSet}
             onToggleRemind={onToggleRemind}
+            onRate={onRate}
           />
         ))}
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Select, {
@@ -11,6 +11,9 @@ import Select, {
 import { ArrowRight, Camera, ChevronDown, Upload } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
+import { ApiError } from "@/lib/api/client";
+import { getActiveElection, nominateCandidate } from "@/lib/api/elections";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -54,9 +57,20 @@ export function NominateForm({ locale, dictionary }: NominateFormProps) {
   const [name, setName] = useState("");
   const [bio, setBio] = useState("");
   const [cvName, setCvName] = useState("");
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [cvFile, setCvFile] = useState<File | null>(null);
+  const [electionId, setElectionId] = useState<number | null>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const [successOpen, setSuccessOpen] = useState(false);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    if (!token) return;
+    void getActiveElection(locale, token).then((election) => {
+      if (election) setElectionId(election.id);
+    });
+  }, [locale, token]);
 
   const positionOptions: Option[] = t.positions;
   const electionsHref = `/${locale}/dashboard/elections`;
@@ -111,8 +125,10 @@ export function NominateForm({ locale, dictionary }: NominateFormProps) {
   function handlePhotoChange(file: File | undefined) {
     if (!file) {
       setPhotoPreview(null);
+      setPhotoFile(null);
       return;
     }
+    setPhotoFile(file);
     const url = URL.createObjectURL(file);
     setPhotoPreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
@@ -120,21 +136,29 @@ export function NominateForm({ locale, dictionary }: NominateFormProps) {
     });
   }
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!position || !name.trim() || !bio.trim() || !cvName || !termsAccepted) {
+    if (!position || !bio.trim() || !termsAccepted || !token || !electionId) {
       setError(dictionary.common.required);
       return;
     }
     setError("");
-    console.log({
-      position: position.value,
-      name,
-      bio,
-      cvName,
-      hasPhoto: Boolean(photoPreview),
-    });
-    setSuccessOpen(true);
+    try {
+      await nominateCandidate(
+        {
+          election_id: electionId,
+          position: position.value,
+          bio: bio.trim(),
+          image: photoFile,
+          files: cvFile ? [cvFile] : [],
+        },
+        locale,
+        token,
+      );
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   const labelClass = "text-[14px] font-bold";
@@ -260,6 +284,7 @@ export function NominateForm({ locale, dictionary }: NominateFormProps) {
                 className="hidden"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
+                  setCvFile(file ?? null);
                   setCvName(file?.name ?? "");
                 }}
               />

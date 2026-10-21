@@ -1,12 +1,17 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, MapPin, User } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
+import { ApiError } from "@/lib/api/client";
+import { getHelpTypes } from "@/lib/api/catalog";
+import { createHelpOrder } from "@/lib/api/requests";
+import { toApiPhone } from "@/lib/api/localized";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -34,7 +39,10 @@ export function AddHelpRequestForm({
   const t = dictionary.dashboard.requestsPage;
   const isAr = locale === "ar";
   const router = useRouter();
+  const { token } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
+  const [typeId, setTypeId] = useState<number | null>(null);
+  const [attachment, setAttachment] = useState<File | null>(null);
 
   const [fullName, setFullName] = useState("");
   const [nationalId, setNationalId] = useState("");
@@ -49,29 +57,46 @@ export function AddHelpRequestForm({
   const labelClass = "text-[14px] font-bold";
   const fieldGap = "flex flex-col gap-1.5";
 
-  function handleSubmit(event: FormEvent) {
+  useEffect(() => {
+    if (!token) return;
+    void getHelpTypes(locale, token)
+      .then((types) => setTypeId(types[0]?.id ?? null))
+      .catch(() => undefined);
+  }, [locale, token]);
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (
       !fullName.trim() ||
       !nationalId.trim() ||
       !mobile.trim() ||
       !requestTitle.trim() ||
-      !description.trim()
+      !description.trim() ||
+      !token
     ) {
       setError(dictionary.common.required);
       return;
     }
     setError("");
-    console.log({
-      fullName,
-      nationalId,
-      mobile,
-      requestTitle,
-      description,
-      geo,
-      fileName,
-    });
-    setSuccessOpen(true);
+    try {
+      await createHelpOrder(
+        {
+          type_id: typeId ?? undefined,
+          full_name: fullName.trim(),
+          national_id: nationalId.trim(),
+          geographical_location: geo.trim(),
+          request_title: requestTitle.trim(),
+          mobile_number: toApiPhone(mobile),
+          request_description: description.trim(),
+          attachment,
+        },
+        locale,
+        token,
+      );
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   return (
@@ -235,7 +260,8 @@ export function AddHelpRequestForm({
                   type="file"
                   className="hidden"
                   onChange={(e) => {
-                    const file = e.target.files?.[0];
+                    const file = e.target.files?.[0] ?? null;
+                    setAttachment(file);
                     setFileName(file?.name ?? "");
                   }}
                 />

@@ -15,7 +15,7 @@ type AddCommentModalProps = {
   publishLabel: string;
   reviewLabel: string;
   onClose: () => void;
-  onPublish: (payload: { text: string; fileNames: string[] }) => void;
+  onPublish: (payload: { text: string; files: File[] }) => void;
 };
 
 export function AddCommentModal({
@@ -33,7 +33,7 @@ export function AddCommentModal({
   const isAr = locale === "ar";
   const [mounted, setMounted] = useState(false);
   const [text, setText] = useState("");
-  const [fileNames, setFileNames] = useState<string[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -57,7 +57,7 @@ export function AddCommentModal({
   useEffect(() => {
     if (!open) {
       setText("");
-      setFileNames([]);
+      setFiles([]);
     }
   }, [open]);
 
@@ -112,9 +112,9 @@ export function AddCommentModal({
             {attachHint}
           </span>
           <span className="text-xs text-[#9CA3AF]">{attachFormats}</span>
-          {fileNames.length > 0 ? (
+          {files.length > 0 ? (
             <span className="mt-1 text-xs font-medium text-[#133D3C]">
-              {fileNames.join(", ")}
+              {files.map((file) => file.name).join(", ")}
             </span>
           ) : null}
         </button>
@@ -125,8 +125,7 @@ export function AddCommentModal({
           multiple
           className="hidden"
           onChange={(e) => {
-            const files = Array.from(e.target.files ?? []);
-            setFileNames(files.map((f) => f.name));
+            setFiles(Array.from(e.target.files ?? []));
           }}
         />
 
@@ -134,8 +133,8 @@ export function AddCommentModal({
           <button
             type="button"
             onClick={() => {
-              if (!text.trim() && fileNames.length === 0) return;
-              onPublish({ text: text.trim(), fileNames });
+              if (!text.trim() && files.length === 0) return;
+              onPublish({ text: text.trim(), files });
             }}
             className="rounded-full bg-[#D5AF34] px-4 py-3 text-sm font-bold text-[#170F49] transition hover:brightness-95"
           >

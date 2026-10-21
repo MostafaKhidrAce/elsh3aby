@@ -38,7 +38,7 @@ export function RequestCard({
   const borderColor = STATUS_BORDER[item.status];
   const detailsHref =
     item.category === "help" || item.category === "consult"
-      ? `/${locale}/dashboard/requests/${item.id}`
+      ? `/${locale}/dashboard/requests/${item.id}?cat=${item.category}`
       : null;
 
   const content = (

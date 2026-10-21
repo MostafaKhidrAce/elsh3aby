@@ -71,3 +71,62 @@ export function resolveCmsImage(url: string | null | undefined, fallback: string
   }
   return url;
 }
+
+const STORAGE_ORIGIN = (
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://family-box.aksapp.com/api/v1"
+).replace(/\/api\/v1\/?$/, "");
+
+export function extractImageUrls(value: unknown): string[] {
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === "string" && item.trim()) return [item.trim()];
+    if (item && typeof item === "object") {
+      const record = item as Record<string, unknown>;
+      const url = record.url ?? record.image_url ?? record.path ?? record.cover_image;
+      return typeof url === "string" && url.trim() ? [url.trim()] : [];
+    }
+    return [];
+  });
+}
+
+export function resolveMedia(
+  url: string | null | undefined,
+  fallback = "/placeholder/user-placeholder-img.svg",
+): string {
+  if (!url?.trim()) return fallback;
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) {
+    return resolveCmsImage(url, fallback);
+  }
+  return resolveCmsImage(
+    `${STORAGE_ORIGIN}/storage_link/${url.replace(/^\/+/, "")}`,
+    fallback,
+  );
+}
+
+export function formatDateTimeLabel(value?: string | null, locale: Locale = "ar"): string {
+  if (!value) return "";
+  const date = new Date(value.replace(" ", "T"));
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString(locale === "ar" ? "ar-SA" : "en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+export function mapRequestStatus(value?: string | null): "pending" | "approved" | "rejected" {
+  const status = (value || "").toLowerCase();
+  if (status.includes("reject") || status.includes("رفض")) return "rejected";
+  if (
+    status.includes("approv") ||
+    status.includes("accept") ||
+    status.includes("active") ||
+    status.includes("confirm") ||
+    status.includes("موافق") ||
+    status.includes("مقبول")
+  ) {
+    return "approved";
+  }
+  return "pending";
+}

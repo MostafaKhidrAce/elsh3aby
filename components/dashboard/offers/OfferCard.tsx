@@ -59,6 +59,7 @@ export function OfferCard({
           getOfferLabel={getOfferLabel}
           couponLabel={couponLabel}
           copiedLabel={copiedLabel}
+          locale={locale}
         />
       </div>
     </article>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Files, Plus, Search } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
 import { DashboardItemsEmptyState } from "@/components/dashboard/DashboardItemsEmptyState";
 import { OfferCard } from "@/components/dashboard/offers/OfferCard";
 import { NewsPublishTypeSection } from "@/components/dashboard/requests/NewsPublishTypeSection";
@@ -12,25 +13,32 @@ import { RequestStatusAccordion } from "@/components/dashboard/requests/RequestS
 import { SubscriptionRequiredModal } from "@/components/dashboard/requests/SubscriptionRequiredModal";
 import { VenueBookingCard } from "@/components/dashboard/requests/VenueBookingCard";
 import {
-  DUMMY_NEWS_PUBLISH_REQUESTS,
   NEWS_PUBLISH_TYPES,
   groupNewsPublishByType,
+  type DummyNewsPublishRequest,
   type NewsPublishStatus,
   type NewsPublishTypeId,
 } from "@/lib/dashboard/dummy-news-publish";
-import { DUMMY_OFFERS } from "@/lib/dashboard/dummy-offers";
-import {
-  DUMMY_VENUE_BOOKINGS,
-  hasActivePackage,
-} from "@/lib/dashboard/dummy-venue-bookings";
+import type { DummyOffer } from "@/lib/dashboard/dummy-offers";
+import type { DummyVenueBooking } from "@/lib/dashboard/dummy-venue-bookings";
 import {
   REQUEST_STATUSES,
-  getCategoryCounts,
-  getRequestsByCategory,
   groupByStatus,
+  type DummyRequest,
   type RequestCategory,
   type RequestStatus,
 } from "@/lib/dashboard/dummy-requests";
+import { ApiError } from "@/lib/api/client";
+import {
+  getConsultations,
+  getDiscountOffers,
+  getHelpOrders,
+  getPlaceBookings,
+  getPublishRequests,
+  getRequestsCounts,
+} from "@/lib/api/requests";
+import { hasLiveActivePackage } from "@/lib/api/subscriptions";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -46,8 +54,17 @@ const BOOKING_VISIBLE_COUNT = 6;
 
 export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
   const t = dictionary.dashboard.requestsPage;
+  const { token, isReady } = useAuth();
   const [category, setCategory] = useState<RequestCategory>("help");
   const [query, setQuery] = useState("");
+  const [helpItems, setHelpItems] = useState<DummyRequest[]>([]);
+  const [consultItems, setConsultItems] = useState<DummyRequest[]>([]);
+  const [offers, setOffers] = useState<DummyOffer[]>([]);
+  const [newsItems, setNewsItems] = useState<DummyNewsPublishRequest[]>([]);
+  const [bookings, setBookings] = useState<DummyVenueBooking[]>([]);
+  const [apiCounts, setApiCounts] = useState<Record<string, number> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [openStatuses, setOpenStatuses] = useState<Set<RequestStatus>>(
     () => new Set(["pending", "approved", "rejected"]),
   );
@@ -65,19 +82,54 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
   const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [packageActive, setPackageActive] = useState(false);
 
-  useEffect(() => {
-    setPackageActive(hasActivePackage());
-  }, [category]);
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const [help, consult, offerPage, news, venue, counts, active] =
+        await Promise.all([
+          getHelpOrders(locale, token),
+          getConsultations(locale, token),
+          getDiscountOffers(locale, token, { my_requests_only: true }),
+          getPublishRequests(locale, token),
+          getPlaceBookings(locale, token),
+          getRequestsCounts(locale, token),
+          hasLiveActivePackage(locale, token),
+        ]);
+      setHelpItems(help);
+      setConsultItems(consult);
+      setOffers(offerPage.items);
+      setNewsItems(news);
+      setBookings(venue);
+      setApiCounts(counts);
+      setPackageActive(active);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, locale, dictionary.common.loadError]);
 
-  const counts = useMemo(() => {
-    const base = getCategoryCounts();
-    return {
-      ...base,
-      offers: DUMMY_OFFERS.length,
-      news: DUMMY_NEWS_PUBLISH_REQUESTS.length,
-      booking: DUMMY_VENUE_BOOKINGS.length,
-    };
-  }, []);
+  useEffect(() => {
+    if (!isReady || !token) return;
+    void load();
+  }, [isReady, token, load]);
+
+  const counts = useMemo(
+    () => ({
+      help: Number(apiCounts?.help ?? apiCounts?.help_orders ?? helpItems.length),
+      consult: Number(
+        apiCounts?.consult ?? apiCounts?.consultations ?? consultItems.length,
+      ),
+      offers: Number(apiCounts?.offers ?? apiCounts?.discount_offers ?? offers.length),
+      news: Number(apiCounts?.news ?? apiCounts?.publish_requests ?? newsItems.length),
+      booking: Number(
+        apiCounts?.booking ?? apiCounts?.place_bookings ?? bookings.length,
+      ),
+    }),
+    [apiCounts, helpItems.length, consultItems.length, offers.length, newsItems.length, bookings.length],
+  );
 
   const categoryLabels: Record<RequestCategory, string> = {
     help: t.categoryHelp,
@@ -120,8 +172,9 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
 
   const filtered = useMemo(() => {
     if (isOffers || isNews || isBooking) return [];
+    const source = category === "consult" ? consultItems : helpItems;
     const q = query.trim().toLowerCase();
-    return getRequestsByCategory(category).filter((item) => {
+    return source.filter((item) => {
       if (!q) return true;
       return [item.title, item.titleEn, item.rejectionReason, item.rejectionReasonEn]
         .filter(Boolean)
@@ -129,12 +182,12 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
         .toLowerCase()
         .includes(q);
     });
-  }, [category, query, isOffers, isNews, isBooking]);
+  }, [category, query, isOffers, isNews, isBooking, helpItems, consultItems]);
 
   const filteredOffers = useMemo(() => {
     if (!isOffers) return [];
     const q = query.trim().toLowerCase();
-    return DUMMY_OFFERS.filter((offer) => {
+    return offers.filter((offer) => {
       if (!q) return true;
       return [
         offer.title,
@@ -148,12 +201,12 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
         .toLowerCase()
         .includes(q);
     });
-  }, [isOffers, query]);
+  }, [isOffers, query, offers]);
 
   const filteredNews = useMemo(() => {
     if (!isNews) return [];
     const q = query.trim().toLowerCase();
-    return DUMMY_NEWS_PUBLISH_REQUESTS.filter((item) => {
+    return newsItems.filter((item) => {
       if (!q) return true;
       return [
         item.title,
@@ -167,12 +220,12 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
         .toLowerCase()
         .includes(q);
     });
-  }, [isNews, query]);
+  }, [isNews, query, newsItems]);
 
   const filteredBookings = useMemo(() => {
     if (!isBooking) return [];
     const q = query.trim().toLowerCase();
-    return DUMMY_VENUE_BOOKINGS.filter((item) => {
+    return bookings.filter((item) => {
       if (!q) return true;
       return [
         item.title,
@@ -188,7 +241,7 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
         .toLowerCase()
         .includes(q);
     });
-  }, [isBooking, query]);
+  }, [isBooking, query, bookings]);
 
   const visibleBookings = bookingExpanded
     ? filteredBookings
@@ -250,8 +303,7 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
           setSubscriptionModalOpen(true);
           return;
         }
-        // Package active — booking form can be wired later
-        console.log("venue booking request");
+        window.location.assign(`/${locale}/dashboard/booking`);
       }}
       className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#D5AF34] px-6 py-3 text-sm font-bold text-white transition hover:brightness-95"
     >
@@ -344,7 +396,15 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
             }}
           />
 
-          {isEmpty ? (
+          <DashboardFetchState
+            loading={loading}
+            error={error}
+            loadingLabel={dictionary.common.loading}
+            retryLabel={dictionary.common.retry}
+            onRetry={() => void load()}
+          />
+
+          {!loading && isEmpty ? (
             <DashboardItemsEmptyState
               title={
                 isConsult

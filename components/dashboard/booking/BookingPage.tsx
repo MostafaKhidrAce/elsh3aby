@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -17,11 +17,15 @@ import { BookingStatusCard } from "@/components/dashboard/booking/BookingStatusC
 import { BookingConfirmModal } from "@/components/dashboard/booking/BookingConfirmModal";
 import { BookingPaymentModal } from "@/components/dashboard/booking/BookingPaymentModal";
 import {
-  BOOKING_BUSY_DATE_KEYS,
-  BOOKING_CONFLICT_DATE_KEYS,
-  BOOKING_PRICE,
-  DUMMY_BOOKING_STATUS_ITEMS,
-} from "@/lib/dashboard/dummy-venue-bookings";
+  cancelPlaceBooking,
+  checkBookingAvailability,
+  getAvailableBookingDates,
+  getBookingStatusItems,
+  payPlaceBooking,
+} from "@/lib/api/bookings";
+import { useAuth } from "@/lib/auth/auth-context";
+import { BOOKING_PRICE } from "@/lib/dashboard/dummy-venue-bookings";
+import type { BookingStatusItem } from "@/lib/dashboard/dummy-venue-bookings";
 import { toDateKey } from "@/lib/dashboard/dummy-events";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -77,6 +81,31 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
   const [timeTo, setTimeTo] = useState("18:30");
   const [modal, setModal] = useState<ModalKind>(null);
   const [activeBookingId, setActiveBookingId] = useState<string | null>(null);
+  const { token, isReady } = useAuth();
+  const [statusItems, setStatusItems] = useState<BookingStatusItem[]>([]);
+  const [busyDates, setBusyDates] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!isReady || !token) return;
+    const start = toDateKey(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1));
+    const end = toDateKey(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0));
+    void Promise.all([
+      getBookingStatusItems(locale, token),
+      getAvailableBookingDates(locale, token, { start_date: start, end_date: end }),
+    ]).then(([items, dates]) => {
+      setStatusItems(items);
+      const available = new Set(dates);
+      if (available.size) {
+        const busy = new Set<string>();
+        const days = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+        for (let day = 1; day <= days; day += 1) {
+          const key = toDateKey(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day));
+          if (!available.has(key)) busy.add(key);
+        }
+        setBusyDates(busy);
+      }
+    });
+  }, [isReady, token, locale, viewMonth]);
 
   const cells = useMemo(() => buildMonthCells(viewMonth), [viewMonth]);
   const monthLabel = `${t.months[viewMonth.getMonth()]} ${viewMonth.getFullYear()}`;
@@ -119,16 +148,19 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
     }
   }
 
-  function handleBookNow() {
-    if (selectedDate && BOOKING_CONFLICT_DATE_KEYS.has(selectedDate)) {
-      setModal("conflict");
-      return;
+  async function handleBookNow() {
+    if (selectedDate && token) {
+      const available = await checkBookingAvailability(selectedDate, locale, token);
+      if (!available) {
+        setModal("conflict");
+        return;
+      }
     }
     router.push(buildNewHref());
   }
 
   function handleCancelBooking(id: string) {
-    const item = DUMMY_BOOKING_STATUS_ITEMS.find((b) => b.id === id);
+    const item = statusItems.find((b) => b.id === id);
     setActiveBookingId(id);
     setModal(item?.canCancel === false ? "cannot_cancel" : "cancel");
   }
@@ -270,7 +302,7 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
                     }
                     const key = toDateKey(date);
                     const isSelected = key === selectedDate;
-                    const hasReservation = BOOKING_BUSY_DATE_KEYS.has(key);
+                    const hasReservation = busyDates.has(key);
 
                     return (
                       <button
@@ -364,7 +396,7 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
             {t.statusSection}
           </h2>
           <div className="space-y-4">
-            {DUMMY_BOOKING_STATUS_ITEMS.map((booking) => (
+            {statusItems.map((booking) => (
               <BookingStatusCard
                 key={booking.id}
                 booking={booking}
@@ -375,7 +407,7 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
                 postponeLabel={t.postpone}
                 cancelLabel={t.cancel}
                 payLabel={t.pay}
-                onPostpone={(id) => console.log("postpone", id)}
+                onPostpone={() => undefined}
                 onCancel={handleCancelBooking}
                 onPay={handlePayBooking}
               />
@@ -392,8 +424,15 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
           icon={cancelIcon}
           primaryLabel={t.confirmCancel}
           secondaryLabel={t.ok}
-          onPrimary={() => {
-            console.log("confirm cancel", activeBookingId);
+          onPrimary={async () => {
+            if (activeBookingId && token) {
+              try {
+                await cancelPlaceBooking(activeBookingId, locale, token);
+                setStatusItems((prev) => prev.filter((item) => item.id !== activeBookingId));
+              } catch {
+                // keep modal closed even if API rejects the cancel
+              }
+            }
             setModal(null);
           }}
           onSecondary={() => setModal(null)}
@@ -446,8 +485,14 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
           description={t.paymentDeadlineDescription}
           payLabel={t.payWithPrice}
           priceLabel={`${BOOKING_PRICE} ${t.riyal}`}
-          onPay={() => {
-            console.log("pay", activeBookingId);
+          onPay={async () => {
+            if (activeBookingId && token) {
+              try {
+                await payPlaceBooking(activeBookingId, locale, token);
+              } catch {
+                // payment gateway errors stay on the booking list
+              }
+            }
             setModal(null);
           }}
           onClose={() => setModal(null)}

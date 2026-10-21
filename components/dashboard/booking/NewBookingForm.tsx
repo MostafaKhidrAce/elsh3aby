@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Select, {
@@ -19,10 +19,15 @@ import {
 import { UserMenu } from "@/components/layout/UserMenu";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
 import { BookingConfirmModal } from "@/components/dashboard/booking/BookingConfirmModal";
+import { ApiError } from "@/lib/api/client";
+import { getBookingTypes } from "@/lib/api/catalog";
 import {
-  BOOKING_CONFLICT_DATE_KEYS,
-  BOOKING_PRICE,
-} from "@/lib/dashboard/dummy-venue-bookings";
+  checkBookingAvailability,
+  createPlaceBooking,
+} from "@/lib/api/bookings";
+import { pickLocalized, toApiPhone } from "@/lib/api/localized";
+import { useAuth } from "@/lib/auth/auth-context";
+import { BOOKING_PRICE } from "@/lib/dashboard/dummy-venue-bookings";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -75,9 +80,10 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
   const timeFrom = searchParams.get("from") ?? "13:30";
   const timeTo = searchParams.get("to") ?? "17:30";
 
-  const [eventType, setEventType] = useState<Option | null>(
-    t.eventTypes[0] ?? null,
-  );
+  const { token } = useAuth();
+  const [typeOptions, setTypeOptions] = useState<Option[]>([]);
+  const [eventType, setEventType] = useState<Option | null>(null);
+  const [attachment, setAttachment] = useState<File | null>(null);
   const [attendees, setAttendees] = useState("");
   const [firstName, setFirstName] = useState(isAr ? "فيصل" : "Faisal");
   const [mobile, setMobile] = useState("");
@@ -138,29 +144,51 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
     }),
   };
 
-  function handleSubmit(event: FormEvent) {
+  useEffect(() => {
+    if (!token) return;
+    void getBookingTypes(locale, token).then((items) => {
+      const options = items.map((item) => ({
+        value: String(item.id),
+        label: pickLocalized(locale, item.name_ar, item.name_en, item.name || ""),
+      }));
+      setTypeOptions(options);
+      setEventType((current) => current ?? options[0] ?? null);
+    });
+  }, [locale, token]);
+
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (dateKey && BOOKING_CONFLICT_DATE_KEYS.has(dateKey)) {
-      setConflictOpen(true);
-      return;
-    }
-    if (!eventType || !attendees.trim() || !firstName.trim() || !mobile.trim()) {
+    if (!dateKey || !eventType || !firstName.trim() || !mobile.trim() || !token) {
       setError(dictionary.common.required);
       return;
     }
+    const available = await checkBookingAvailability(dateKey, locale, token);
+    if (!available) {
+      setConflictOpen(true);
+      return;
+    }
     setError("");
-    console.log({
-      dateKey,
-      timeFrom,
-      timeTo,
-      eventType: eventType.value,
-      attendees,
-      firstName,
-      mobile,
-      notes,
-      fileName,
-    });
-    setSuccessOpen(true);
+    try {
+      await createPlaceBooking(
+        {
+          booking_type_id: Number(eventType.value),
+          full_name: firstName.trim(),
+          phone: toApiPhone(mobile),
+          date_from: dateKey,
+          date_to: dateKey,
+          time_from: timeFrom,
+          time_to: timeTo,
+          attendees_count: Number(attendees) || undefined,
+          additional_notes: notes.trim() || undefined,
+          attachment,
+        },
+        locale,
+        token,
+      );
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   const labelClass = "text-[14px] font-bold";
@@ -225,7 +253,7 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
                 <Select<Option, false>
                   inputId={typeSelectId}
                   instanceId={typeSelectId}
-                  options={t.eventTypes}
+                  options={typeOptions}
                   value={eventType}
                   onChange={(option) => setEventType(option)}
                   placeholder={t.eventTypePlaceholder}
@@ -312,6 +340,7 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
                   className="hidden"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
+                    setAttachment(file ?? null);
                     setFileName(file?.name ?? "");
                   }}
                 />

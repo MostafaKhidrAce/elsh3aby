@@ -6,6 +6,10 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, MapPin, Minus, Plus, Store } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
+import { ApiError } from "@/lib/api/client";
+import { createOrder } from "@/lib/api/shop";
+import { toApiPhone } from "@/lib/api/localized";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { MarketProduct } from "@/lib/dashboard/dummy-market";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -48,26 +52,49 @@ export function MarketBuyForm({
   const [notes, setNotes] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState("");
+  const { token } = useAuth();
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!name.trim() || !mobile.trim() || !address.trim() || !location.trim()) {
+    if (!name.trim() || !mobile.trim() || !address.trim() || !token) {
       setError(dictionary.common.required);
       return;
     }
     setError("");
-    const params = new URLSearchParams({
-      qty: String(quantity),
-      name: name.trim(),
-      mobile: mobile.trim(),
-      address: address.trim(),
-      location: location.trim(),
-      notes: notes.trim(),
-    });
-    console.log("market pay", Object.fromEntries(params));
-    router.push(
-      `/${locale}/dashboard/market/${product.id}/receipt?${params.toString()}`,
-    );
+    try {
+      const result = await createOrder(
+        {
+          name: name.trim(),
+          phone: toApiPhone(mobile),
+          product_id: Number(product.id),
+          quantity,
+          shipping_address: address.trim(),
+          notes: notes.trim() || undefined,
+        },
+        locale,
+        token,
+      );
+      const orderId = result.order?.id ?? result.id;
+      const params = new URLSearchParams({
+        qty: String(quantity),
+        name: name.trim(),
+        mobile: mobile.trim(),
+        address: address.trim(),
+        location: location.trim(),
+        notes: notes.trim(),
+      });
+      if (orderId) params.set("orderId", String(orderId));
+      const redirect = result.payment?.redirect_url || result.edfapay_redirect_url;
+      if (redirect) {
+        window.location.assign(redirect);
+        return;
+      }
+      router.push(
+        `/${locale}/dashboard/market/${product.id}/receipt?${params.toString()}`,
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   const labelClass = "text-[14px] font-bold";

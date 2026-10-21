@@ -35,6 +35,12 @@ type AuthMember = {
 type AuthPayload = {
   token?: string | null;
   access_token?: string | null;
+  authorization?: {
+    type?: string | null;
+    token?: string | null;
+    access_token?: string | null;
+    refresh_token?: string | null;
+  } | null;
   user?: AuthMember | null;
   member?: AuthMember | null;
 } & AuthMember;
@@ -46,8 +52,20 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return null;
 }
 
-function pickToken(payload: AuthPayload): string | null {
-  return payload.token || payload.access_token || null;
+function pickStringToken(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function pickToken(payload: Record<string, unknown>): string | null {
+  const direct =
+    pickStringToken(payload.token) || pickStringToken(payload.access_token);
+  if (direct) return direct;
+  const authorization = asRecord(payload.authorization);
+  if (!authorization) return null;
+  return (
+    pickStringToken(authorization.token) ||
+    pickStringToken(authorization.access_token)
+  );
 }
 
 function pickMember(payload: AuthPayload): AuthMember {
@@ -76,10 +94,10 @@ export function toAuthUser(payload: unknown, fallback: AuthUser): AuthUser {
 export function extractAuthToken(payload: unknown): string | null {
   const record = asRecord(payload);
   if (!record) return null;
-  const direct = pickToken(record as AuthPayload);
+  const direct = pickToken(record);
   if (direct) return direct;
   const nested = asRecord(record.data);
-  return nested ? pickToken(nested as AuthPayload) : null;
+  return nested ? pickToken(nested) : null;
 }
 
 export function getApiErrorMessage(error: unknown, fallback: string): string {

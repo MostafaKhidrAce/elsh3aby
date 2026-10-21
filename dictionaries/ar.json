@@ -372,7 +372,10 @@
   },
   "common": {
     "loading": "جاري التحميل...",
-    "required": "هذا الحقل مطلوب"
+    "required": "هذا الحقل مطلوب",
+    "loadMore": "تحميل المزيد",
+    "retry": "إعادة المحاولة",
+    "loadError": "تعذر تحميل البيانات. حاول مرة أخرى."
   },
   "dashboard": {
     "backHome": "العودة للرئيسية",
@@ -402,6 +405,8 @@
       "filter": "تصفية",
       "remind": "تذكير بالفعالية",
       "cancelRemind": "إلغاء تفعيل التذكير",
+      "rateEvent": "تقييم الفعالية",
+      "rated": "تم التقييم",
       "seeMore": "معرفة المزيد",
       "seeLess": "عرض أقل",
       "bookedBy": "تم الحجز بواسطة",
@@ -441,8 +446,10 @@
       "commentSuccessDescription": "شكراً لك للمشاركة، تم إرسال تعليقك بنجاح سيتم مراجعته من خلال الإدارة ثم نشره.",
       "ok": "موافق",
       "addEventFormTitle": "نموذج لإضافة فعالية/حدث جديد",
-      "fullName": "الاسم كامل",
-      "fullNamePlaceholder": "اكتب اسمك",
+      "fullName": "الاسم كامل بالإنجليزية",
+      "fullNamePlaceholder": "اكتب الاسم بالإنجليزية",
+      "fullNameAr": "الاسم كامل بالعربية",
+      "fullNameArPlaceholder": "اكتب الاسم بالعربية",
       "branch": "الفرع",
       "branchPlaceholder": "اختر الفرع التابع له",
       "mobile": "رقم الجوال",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type FormEvent } from "react";
+import { useEffect, useId, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Select, {
@@ -12,6 +12,11 @@ import { ArrowRight, ChevronDown } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
+import { ApiError } from "@/lib/api/client";
+import { getConsultantTypes } from "@/lib/api/catalog";
+import { createConsultation } from "@/lib/api/requests";
+import { pickLocalized } from "@/lib/api/localized";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -57,7 +62,22 @@ export function AddConsultationForm({
   const [error, setError] = useState("");
   const [successOpen, setSuccessOpen] = useState(false);
 
-  const typeOptions: Option[] = t.consultTypes;
+  const { token } = useAuth();
+  const [typeOptions, setTypeOptions] = useState<Option[]>([]);
+
+  useEffect(() => {
+    if (!token) return;
+    void getConsultantTypes(locale, token)
+      .then((items) =>
+        setTypeOptions(
+          items.map((item) => ({
+            value: String(item.id),
+            label: pickLocalized(locale, item.name_ar, item.name_en, item.name || ""),
+          })),
+        ),
+      )
+      .catch(() => undefined);
+  }, [locale, token]);
 
   const selectStyles: StylesConfig<Option, false> = {
     control: (base, state) => ({
@@ -106,19 +126,27 @@ export function AddConsultationForm({
     }),
   };
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!consultType || !title.trim() || !details.trim()) {
+    if (!consultType || !title.trim() || !details.trim() || !token) {
       setError(dictionary.common.required);
       return;
     }
     setError("");
-    console.log({
-      consultType: consultType.value,
-      title,
-      details,
-    });
-    setSuccessOpen(true);
+    try {
+      await createConsultation(
+        {
+          consultant_type_id: Number(consultType.value),
+          title: title.trim(),
+          consultation_text: details.trim(),
+        },
+        locale,
+        token,
+      );
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   const labelClass = "text-[14px] font-bold";

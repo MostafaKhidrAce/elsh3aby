@@ -23,15 +23,24 @@ import { UserMenu } from "@/components/layout/UserMenu";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
 import { BookingConfirmModal } from "@/components/dashboard/booking/BookingConfirmModal";
 import { ProfileOtpModal } from "@/components/dashboard/profile/ProfileOtpModal";
+import { ApiError } from "@/lib/api/client";
 import {
-  DUMMY_FAMILY_BANK_ACCOUNTS,
-  PROFILE_TAKEN_MOBILE,
-} from "@/lib/dashboard/dummy-profile";
+  changePassword,
+  deleteAccount,
+  getBankAccounts,
+  getProfile,
+  updateProfile,
+  updateSettings,
+} from "@/lib/api/profile";
+import { toApiPhone } from "@/lib/api/localized";
 import {
-  SUBSCRIPTION_PACKAGES,
-  hasActivePackage,
-  setActivePackage,
-} from "@/lib/dashboard/dummy-venue-bookings";
+  getSubscriptions,
+  hasLiveActivePackage,
+  subscribeToPackage,
+  type SubscriptionPackage,
+} from "@/lib/api/subscriptions";
+import { useAuth } from "@/lib/auth/auth-context";
+import type { FamilyBankAccount } from "@/lib/dashboard/dummy-profile";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -63,9 +72,14 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
 
   const [tab, setTab] = useState<TabId>("personal");
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
-  const [fullName, setFullName] = useState(isAr ? "فيصل الشعيبي" : "Faisal Al-Shuaibi");
-  const [mobile, setMobile] = useState("0501234567");
-  const [initialMobile] = useState("0501234567");
+  const { token, isReady, user } = useAuth();
+  const [fullName, setFullName] = useState(user?.name || "");
+  const [mobile, setMobile] = useState(user?.phone || "");
+  const [initialMobile, setInitialMobile] = useState(user?.phone || "");
+  const [banks, setBanks] = useState<FamilyBankAccount[]>([]);
+  const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [packageActive, setPackageActive] = useState(false);
   const [nationalId, setNationalId] = useState("");
   const [familyBranch, setFamilyBranch] = useState("");
   const [email, setEmail] = useState("");
@@ -124,6 +138,52 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
     };
   }, [photoPreview]);
 
+  useEffect(() => {
+    if (!isReady || !token) return;
+    void Promise.all([
+      getProfile(locale, token),
+      getBankAccounts(locale, token),
+      getSubscriptions(locale, token),
+      hasLiveActivePackage(locale, token),
+    ]).then(([profile, accounts, pkgs, active]) => {
+      setFullName(profile.name);
+      setMobile(profile.phone);
+      setInitialMobile(profile.phone);
+      setEmail(profile.email);
+      setNationalId(profile.nationalId);
+      setFamilyBranch(profile.familyBranch);
+      setBirthDate(profile.birthDate);
+      setGender(profile.gender);
+      if (profile.image) setPhotoPreview(profile.image);
+      setBanks(accounts);
+      setPackages(pkgs);
+      setPackageActive(active);
+    });
+  }, [isReady, token, locale]);
+
+  async function saveProfile() {
+    if (!token) return;
+    try {
+      await updateProfile(
+        {
+          name: fullName.trim(),
+          gender: gender === "female" ? 1 : 0,
+          phone: toApiPhone(mobile),
+          image: photoFile,
+        },
+        locale,
+        token,
+      );
+      await updateSettings(
+        { language: locale, notifications_enabled: notifications },
+        locale,
+        token,
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
+  }
+
   function handlePersonalSave(event: FormEvent) {
     event.preventDefault();
     if (!fullName.trim() || !mobile.trim()) {
@@ -131,27 +191,14 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
       return;
     }
     setError("");
-    if (mobile.trim() === PROFILE_TAKEN_MOBILE) {
-      setMobileTakenOpen(true);
-      return;
-    }
     if (mobile.trim() !== initialMobile) {
       setOtpOpen(true);
       return;
     }
-    console.log("save profile", {
-      fullName,
-      mobile,
-      nationalId,
-      familyBranch,
-      email,
-      birthDate,
-      gender,
-      notifications,
-    });
+    void saveProfile();
   }
 
-  function handlePasswordSave(event: FormEvent) {
+  async function handlePasswordSave(event: FormEvent) {
     event.preventDefault();
     if (!oldPassword || !newPassword || !confirmPassword) {
       setError(dictionary.common.required);
@@ -161,15 +208,32 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
       setError(dictionary.common.required);
       return;
     }
+    if (!token) return;
     setError("");
-    console.log("change password");
-    setPasswordSuccessOpen(true);
+    try {
+      await changePassword(
+        {
+          old_password: oldPassword,
+          new_password: newPassword,
+          confirm_password: confirmPassword,
+        },
+        locale,
+        token,
+      );
+      setPasswordSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
-  function handleSubscribe(packageId: string) {
-    console.log("subscribe", packageId);
-    setActivePackage(true);
-    setUnpaidOpen(false);
+  async function handleSubscribe(packageId: number) {
+    if (!token) return;
+    try {
+      await subscribeToPackage(packageId, locale, token);
+      setUnpaidOpen(false);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   return (
@@ -200,7 +264,7 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
                   key={item.id}
                   type="button"
                   onClick={() => {
-                    if (item.id === "banks" && !hasActivePackage()) {
+                    if (item.id === "banks" && !packageActive) {
                       setUnpaidOpen(true);
                     }
                     setTab(item.id);
@@ -250,8 +314,9 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (!file) return;
+                    setPhotoFile(file);
                     setPhotoPreview((prev) => {
-                      if (prev) URL.revokeObjectURL(prev);
+                      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
                       return URL.createObjectURL(file);
                     });
                   }}
@@ -422,7 +487,20 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
                     </div>
                     <button
                       type="button"
-                      onClick={() => console.log("delete account")}
+                      onClick={async () => {
+                        if (!token) return;
+                        const password = window.prompt(t.tabPassword) || "";
+                        if (!password) return;
+                        try {
+                          await deleteAccount({ password }, locale, token);
+                        } catch (err) {
+                          setError(
+                            err instanceof ApiError
+                              ? err.message
+                              : dictionary.common.loadError,
+                          );
+                        }
+                      }}
                       className="flex w-full items-center gap-2 px-4 py-3.5 text-sm font-semibold text-[#E11D48] transition hover:bg-[#FFF5F5]"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -566,7 +644,7 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
 
           {tab === "banks" ? (
             <div className="grid gap-4 sm:grid-cols-2">
-              {DUMMY_FAMILY_BANK_ACCOUNTS.map((account) => {
+              {banks.map((account) => {
                 const bankName = isAr ? account.bankName : account.bankNameEn;
                 const accountType = isAr
                   ? account.accountType
@@ -635,8 +713,10 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
                 {t.packagesIntro}
               </p>
               <div className="mx-auto grid max-w-4xl gap-4 md:grid-cols-3">
-                {SUBSCRIPTION_PACKAGES.slice(0, 3).map((pkg, index) => {
-                  const duration = isAr ? pkg.durationAr : pkg.durationEn;
+                {packages.slice(0, 3).map((pkg, index) => {
+                  const duration = isAr
+                    ? `${pkg.durationMonths} شهر`
+                    : `${pkg.durationMonths} months`;
                   const featured = index === 1;
                   return (
                     <article
@@ -717,10 +797,12 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
           resendLabel={t.otpResend}
           confirmLabel={t.ok}
           onClose={() => setOtpOpen(false)}
-          onConfirm={(code) => {
-            console.log("otp", code);
+          onConfirm={() => {
             setOtpOpen(false);
-            setMobileSuccessOpen(true);
+            void saveProfile().then(() => {
+              setInitialMobile(mobile);
+              setMobileSuccessOpen(true);
+            });
           }}
         />
       ) : null}

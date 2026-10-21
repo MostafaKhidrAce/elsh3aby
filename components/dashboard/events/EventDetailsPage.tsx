@@ -1,26 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Clock, Gem, MapPin, Plus, Users } from "lucide-react";
+import { ArrowRight, Clock, MapPin, Plus, Star, Users } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
 import { EventImageSlider } from "@/components/dashboard/events/EventImageSlider";
 import { ImageLightbox } from "@/components/dashboard/events/ImageLightbox";
 import { AddCommentModal } from "@/components/dashboard/events/AddCommentModal";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
-import type {
-  DummyEvent,
-  DummyEventComment,
-} from "@/lib/dashboard/dummy-events";
+import { ApiError } from "@/lib/api/client";
+import {
+  addEventComment,
+  getEvent,
+  getEventComments,
+  rateEvent,
+  type EventCardView,
+  type EventCommentView,
+} from "@/lib/api/events";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
 type EventDetailsPageProps = {
   locale: Locale;
   dictionary: Dictionary;
-  event: DummyEvent;
+  eventId: string;
 };
 
 const PLACEHOLDER_AVATAR = "/placeholder/user-placeholder-img.svg";
@@ -32,27 +39,63 @@ const cardClass =
 export function EventDetailsPage({
   locale,
   dictionary,
-  event,
+  eventId,
 }: EventDetailsPageProps) {
   const t = dictionary.dashboard.eventsPage;
   const isAr = locale === "ar";
+  const { token, isReady } = useAuth();
 
-  const [comments, setComments] = useState<DummyEventComment[]>(event.comments);
+  const [event, setEvent] = useState<EventCardView | null>(null);
+  const [comments, setComments] = useState<EventCommentView[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [commentOpen, setCommentOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
 
-  const title = isAr ? event.detailTitle : event.detailTitleEn;
-  const description = isAr ? event.detailDescription : event.detailDescriptionEn;
-  const location = isAr ? event.location : event.locationEn;
-  const address = isAr ? event.address : event.addressEn;
-  const publisher = isAr ? event.publisherName : event.publisherNameEn;
-  const branch = isAr ? event.branch : event.branchEn;
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const [liveEvent, liveComments] = await Promise.all([
+        getEvent(eventId, locale, token),
+        getEventComments(eventId, locale, token),
+      ]);
+      setEvent(liveEvent);
+      setComments(liveComments);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, eventId, locale, dictionary.common.loadError]);
+
+  useEffect(() => {
+    if (!isReady || !token) return;
+    void load();
+  }, [isReady, token, load]);
 
   const descriptionParagraphs = useMemo(
-    () => description.split(/(?<=\.)\s+/).filter(Boolean),
-    [description],
+    () => (event?.description || "").split(/(?<=\.)\s+/).filter(Boolean),
+    [event?.description],
   );
+
+  async function handleRate(rating: number) {
+    if (!token || !event?.canRate) return;
+    try {
+      await rateEvent(event.id, rating, locale, token);
+      setEvent({
+        ...event,
+        isRated: true,
+        canRate: false,
+        ratingAverage: rating,
+        ratingCount: event.ratingCount + 1,
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
+  }
 
   return (
     <>
@@ -88,125 +131,150 @@ export function EventDetailsPage({
           <UserMenu locale={locale} dictionary={dictionary} />
         </header>
 
-        <section className={`${cardClass} space-y-5`}>
-          <div className="flex items-center gap-2.5">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#D5AF34]">
-              {event.category === "wedding" ? (
-                <Gem className="h-4 w-4 text-white" strokeWidth={2} />
-              ) : (
-                <Users className="h-4 w-4 text-white" strokeWidth={2} />
-              )}
-            </span>
-            <h1 className="text-xl font-bold text-[#133D3C] sm:text-2xl">
-              {title}
-            </h1>
-          </div>
+        <DashboardFetchState
+          loading={loading}
+          error={error}
+          loadingLabel={dictionary.common.loading}
+          retryLabel={dictionary.common.retry}
+          onRetry={() => void load()}
+        />
 
-          <EventImageSlider
-            images={event.images}
-            locale={locale}
-            alt={title}
-          />
-
-          <div className="space-y-3 text-[14px] font-medium leading-7 text-[#4A4A57] sm:text-[15px]">
-            {descriptionParagraphs.map((paragraph) => (
-              <p key={paragraph.slice(0, 24)}>{paragraph}</p>
-            ))}
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-[#5C5C6B]">
-              <div className="flex min-w-0 items-center gap-1.5">
-                <MapPin className="h-4 w-4 shrink-0" style={{ color: GOLD }} />
-                <span>{location}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 shrink-0" style={{ color: GOLD }} />
-                <span>{event.time}</span>
-              </div>
-            </div>
-
+        {event ? (
+          <section className={`${cardClass} space-y-5`}>
             <div className="flex items-center gap-2.5">
-              <Image
-                src={PLACEHOLDER_AVATAR}
-                alt=""
-                width={44}
-                height={44}
-                className="h-11 w-11 rounded-full object-cover"
-              />
-              <div>
-                <p className="text-[11px] text-[#9CA3AF]">{t.bookedBy}</p>
-                <p className="text-sm font-bold text-[#170F49]">{publisher}</p>
-                {branch ? (
-                  <span className="mt-1 inline-flex rounded-md bg-[#F4E8C0] px-2 py-0.5 text-[11px] font-semibold text-[#D5AF34]">
-                    {branch}
-                  </span>
-                ) : null}
-              </div>
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#D5AF34]">
+                <Users className="h-4 w-4 text-white" strokeWidth={2} />
+              </span>
+              <h1 className="text-xl font-bold text-[#133D3C] sm:text-2xl">
+                {event.title || event.typeName}
+              </h1>
             </div>
-          </div>
 
-          <div className="space-y-3 pt-2">
-            <h2 className="text-base font-bold text-[#D5AF34] sm:text-lg">
-              {t.eventAddressTitle}
-            </h2>
-            <p className="text-sm font-semibold text-[#4A4A57] sm:text-[15px]">
-              {address}
-            </p>
-            {event.mapEmbedUrl ? (
-              <div className="overflow-hidden rounded-[16px] border border-[#EAEAEA]">
-                <iframe
-                  title={t.eventAddressTitle}
-                  src={event.mapEmbedUrl}
-                  className="h-[280px] w-full border-0 sm:h-[340px]"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  allowFullScreen
-                />
+            <EventImageSlider
+              images={event.images}
+              locale={locale}
+              alt={event.title}
+            />
+
+            <div className="space-y-3 text-[14px] font-medium leading-7 text-[#4A4A57] sm:text-[15px]">
+              {descriptionParagraphs.map((paragraph) => (
+                <p key={paragraph.slice(0, 24)}>{paragraph}</p>
+              ))}
+            </div>
+
+            {event.canRate || event.ratingCount > 0 ? (
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    disabled={!event.canRate || event.isRated}
+                    onClick={() => void handleRate(value)}
+                  >
+                    <Star
+                      className="h-5 w-5"
+                      color={GOLD}
+                      fill={value <= Math.round(event.ratingAverage) ? GOLD : "none"}
+                    />
+                  </button>
+                ))}
+                <span className="text-sm text-[#9CA3AF]">
+                  {event.isRated ? t.rated : t.rateEvent}
+                </span>
               </div>
             ) : null}
-          </div>
-        </section>
 
-        <section className={`${cardClass} space-y-5`}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-lg font-bold text-[#133D3C] sm:text-xl">
-              {t.commentsTitle}
-            </h2>
-            <button
-              type="button"
-              onClick={() => setCommentOpen(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#D5AF34] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
-            >
-              <Plus className="h-4 w-4" strokeWidth={2.5} />
-              {t.addComment}
-            </button>
-          </div>
+            <div className="space-y-4">
+              <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium text-[#5C5C6B]">
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <MapPin className="h-4 w-4 shrink-0" style={{ color: GOLD }} />
+                  <span>{event.location}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 shrink-0" style={{ color: GOLD }} />
+                  <span>{event.time}</span>
+                </div>
+              </div>
 
-          <ul className="divide-y divide-[#F0F0F0]">
-            {comments.map((comment) => {
-              const author = isAr ? comment.author : comment.authorEn;
-              const dateLabel = isAr ? comment.dateLabel : comment.dateLabelEn;
-              const text = isAr ? comment.text : comment.textEn;
-              return (
+              <div className="flex items-center gap-2.5">
+                <Image
+                  src={event.publisherAvatar || PLACEHOLDER_AVATAR}
+                  alt=""
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-[11px] text-[#9CA3AF]">{t.bookedBy}</p>
+                  <p className="text-sm font-bold text-[#170F49]">{event.publisherName}</p>
+                  {event.branch ? (
+                    <span className="mt-1 inline-flex rounded-md bg-[#F4E8C0] px-2 py-0.5 text-[11px] font-semibold text-[#D5AF34]">
+                      {event.branch}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <h2 className="text-base font-bold text-[#D5AF34] sm:text-lg">
+                {t.eventAddressTitle}
+              </h2>
+              <p className="text-sm font-semibold text-[#4A4A57] sm:text-[15px]">
+                {event.address}
+              </p>
+              {event.mapEmbedUrl ? (
+                <div className="overflow-hidden rounded-[16px] border border-[#EAEAEA]">
+                  <iframe
+                    title={t.eventAddressTitle}
+                    src={event.mapEmbedUrl}
+                    className="h-[280px] w-full border-0 sm:h-[340px]"
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                  />
+                </div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {event ? (
+          <section className={`${cardClass} space-y-5`}>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-lg font-bold text-[#133D3C] sm:text-xl">
+                {t.commentsTitle}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setCommentOpen(true)}
+                className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#D5AF34] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
+              >
+                <Plus className="h-4 w-4" strokeWidth={2.5} />
+                {t.addComment}
+              </button>
+            </div>
+
+            <ul className="divide-y divide-[#F0F0F0]">
+              {comments.map((comment) => (
                 <li key={comment.id} className="space-y-3 py-5 first:pt-0 last:pb-0">
                   <div className="flex items-start gap-3">
                     <Image
-                      src={PLACEHOLDER_AVATAR}
+                      src={comment.avatarUrl || PLACEHOLDER_AVATAR}
                       alt=""
                       width={40}
                       height={40}
                       className="h-10 w-10 rounded-full object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="font-bold text-[#170F49]">{author}</p>
+                      <p className="font-bold text-[#170F49]">{comment.author}</p>
                       <p className="text-xs text-[#9CA3AF] sm:text-sm">
-                        {dateLabel}
+                        {comment.dateLabel}
                       </p>
                     </div>
                   </div>
                   <p className="text-sm leading-7 text-[#5C5C6B] sm:text-[15px]">
-                    {text}
+                    {comment.text}
                   </p>
                   {comment.images.length > 0 ? (
                     <div className="flex flex-wrap gap-2.5">
@@ -228,10 +296,10 @@ export function EventDetailsPage({
                     </div>
                   ) : null}
                 </li>
-              );
-            })}
-          </ul>
-        </section>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </div>
 
       <AddCommentModal
@@ -244,25 +312,22 @@ export function EventDetailsPage({
         publishLabel={t.publishComment}
         reviewLabel={t.reviewComment}
         onClose={() => setCommentOpen(false)}
-        onPublish={({ text, fileNames }) => {
-          const now = new Date();
-          const newComment: DummyEventComment = {
-            id: `local-${Date.now()}`,
-            author: isAr ? "أنت" : "You",
-            authorEn: "You",
-            dateLabel: now.toLocaleString(isAr ? "ar-SA" : "en-GB"),
-            dateLabelEn: now.toLocaleString("en-GB"),
-            text: text || (isAr ? "تمت إضافة مرفق" : "Attachment added"),
-            textEn: text || "Attachment added",
-            images: fileNames.length
-              ? [
-                  "https://images.unsplash.com/photo-1519167758481-83f29da8c2b4?w=400&q=80",
-                ]
-              : [],
-          };
-          setComments((prev) => [newComment, ...prev]);
-          setCommentOpen(false);
-          setSuccessOpen(true);
+        onPublish={async ({ text, files }) => {
+          if (!token) return;
+          try {
+            await addEventComment(
+              eventId,
+              { body: text, media: files[0] ?? null },
+              locale,
+              token,
+            );
+            const liveComments = await getEventComments(eventId, locale, token);
+            setComments(liveComments);
+            setCommentOpen(false);
+            setSuccessOpen(true);
+          } catch (err) {
+            setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+          }
         }}
       />
 

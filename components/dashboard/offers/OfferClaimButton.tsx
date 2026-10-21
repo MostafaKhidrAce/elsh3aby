@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Copy } from "lucide-react";
-import {
-  claimOffer,
-  getClaimedOfferIds,
-} from "@/lib/dashboard/dummy-offers";
+import { redeemDiscountOffer } from "@/lib/api/requests";
+import { useAuth } from "@/lib/auth/auth-context";
+import type { Locale } from "@/lib/i18n/config";
 
 type OfferClaimButtonProps = {
   offerId: string;
@@ -13,6 +12,7 @@ type OfferClaimButtonProps = {
   getOfferLabel: string;
   couponLabel: string;
   copiedLabel: string;
+  locale: Locale;
   size?: "sm" | "lg";
 };
 
@@ -22,21 +22,24 @@ export function OfferClaimButton({
   getOfferLabel,
   couponLabel,
   copiedLabel,
+  locale,
   size = "sm",
 }: OfferClaimButtonProps) {
+  const { token } = useAuth();
   const [claimed, setClaimed] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    setClaimed(getClaimedOfferIds().has(offerId));
-  }, [offerId]);
 
   async function handleClick(event: React.MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
     if (!claimed) {
-      claimOffer(offerId);
-      setClaimed(true);
+      if (!token) return;
+      try {
+        await redeemDiscountOffer(offerId, locale, token);
+        setClaimed(true);
+      } catch {
+        setClaimed(true);
+      }
       return;
     }
     try {

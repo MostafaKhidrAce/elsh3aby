@@ -92,6 +92,7 @@ export function OfferDetailsPage({
             couponLabel={t.couponLabel}
             copiedLabel={t.copied}
             size="lg"
+            locale={locale}
           />
         </div>
       </section>

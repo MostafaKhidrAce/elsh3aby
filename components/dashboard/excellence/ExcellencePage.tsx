@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useState, type ComponentType } from "react";
 import {
   Briefcase,
   Filter,
@@ -21,12 +21,20 @@ import {
   type ExcellenceFilterValues,
 } from "@/components/dashboard/excellence/ExcellenceFilterModal";
 import { ExcellencePraiseModal } from "@/components/dashboard/excellence/ExcellencePraiseModal";
+import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
+import { ApiError } from "@/lib/api/client";
+import { getExcellenceTypes, type NamedType } from "@/lib/api/catalog";
 import {
-  DUMMY_EXCELLENCE,
+  getExcellenceCommendations,
+  getExcellenceMembers,
+  sendExcellenceCommendation,
+} from "@/lib/api/excellence";
+import { pickLocalized } from "@/lib/api/localized";
+import { useAuth } from "@/lib/auth/auth-context";
+import {
   EXCELLENCE_AGE_GROUPS,
   EXCELLENCE_BRANCHES,
   EXCELLENCE_YEARS,
-  type ExcellenceCategoryId,
   type DummyExcellence,
 } from "@/lib/dashboard/dummy-excellence";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -47,7 +55,11 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
   const t = dictionary.dashboard.excellencePage;
   const isAr = locale === "ar";
 
-  const [category, setCategory] = useState<ExcellenceCategoryId>("all");
+  const { token, isReady, user } = useAuth();
+  const [category, setCategory] = useState("all");
+  const [types, setTypes] = useState<NamedType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<ExcellenceFilterValues>({
     branch: "",
@@ -59,25 +71,50 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [praiseOpen, setPraiseOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
-  const [items, setItems] = useState<DummyExcellence[]>(DUMMY_EXCELLENCE);
+  const [items, setItems] = useState<DummyExcellence[]>([]);
+
+  const load = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const [liveTypes, result] = await Promise.all([
+        getExcellenceTypes(locale, token),
+        getExcellenceMembers(locale, token, {
+          search: query.trim() || undefined,
+          type_id: category === "all" ? undefined : category,
+          family_branch_id: filters.branch || undefined,
+          age_category: filters.ageGroup || undefined,
+          year: filters.year || undefined,
+          per_page: 50,
+        }),
+      ]);
+      setTypes(liveTypes);
+      setItems(result.items);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, locale, query, category, filters, dictionary.common.loadError]);
+
+  useEffect(() => {
+    if (!isReady || !token) return;
+    void load();
+  }, [isReady, token, load]);
 
   const categoryFilters: {
-    id: ExcellenceCategoryId;
+    id: string;
     label: string;
     icon: ComponentType<LucideProps>;
   }[] = [
     { id: "all", label: t.filterAll, icon: Briefcase },
-    { id: "community", label: t.filterCommunity, icon: Shield },
-    { id: "scientific", label: t.filterScientific, icon: GraduationCap },
-    { id: "religious", label: t.filterReligious, icon: MoonStar },
+    ...types.map((type) => ({
+      id: String(type.id),
+      label: pickLocalized(locale, type.name_ar, type.name_en, type.name || ""),
+      icon: Star,
+    })),
   ];
-
-  const categoryLabels: Record<Exclude<ExcellenceCategoryId, "all">, string> =
-    {
-      community: t.filterCommunity,
-      scientific: t.filterScientific,
-      religious: t.filterReligious,
-    };
 
   const ageLabels: Record<(typeof EXCELLENCE_AGE_GROUPS)[number], string> = {
     youths: t.ageYouths,
@@ -101,7 +138,7 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return items.filter((item) => {
-      if (category !== "all" && item.category !== category) return false;
+      if (category !== "all" && String(item.typeId) !== category) return false;
       if (filters.branch && item.branch !== filters.branch) return false;
       if (filters.ageGroup && item.ageGroup !== filters.ageGroup) return false;
       if (filters.year && item.year !== filters.year) return false;
@@ -121,33 +158,39 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
   function openDetails(id: string) {
     setSelectedId(id);
     setDetailsOpen(true);
+    if (!token) return;
+    void getExcellenceCommendations(id, locale, token).then((praises) => {
+      setItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, praises } : item)),
+      );
+    });
   }
 
-  function handleSendPraise(text: string) {
-    if (!selectedId) return;
-    setItems((prev) =>
-      prev.map((item) => {
-        if (item.id !== selectedId) return item;
-        return {
-          ...item,
-          praises: [
-            ...item.praises,
-            {
-              id: `local-${Date.now()}`,
-              author: isAr ? "محمد بن عبدالعزيز" : "Mohammed bin Abdulaziz",
-              authorEn: "Mohammed bin Abdulaziz",
-              text,
-              textEn: text,
-            },
-          ],
-        };
-      }),
-    );
-    setPraiseOpen(false);
-    setDetailsOpen(false);
-    setSelectedId(null);
-    setSuccessOpen(true);
-    console.log("excellence praise", { id: selectedId, text });
+  async function handleSendPraise(text: string) {
+    if (!selectedId || !token) return;
+    try {
+      await sendExcellenceCommendation(
+        {
+          excellence_member_id: Number(selectedId),
+          commender_name: user?.name || (isAr ? "عضو" : "Member"),
+          commender_phone: user?.phone || undefined,
+          commender_email: user?.email || undefined,
+          message: text,
+        },
+        locale,
+        token,
+      );
+      const praises = await getExcellenceCommendations(selectedId, locale, token);
+      setItems((prev) =>
+        prev.map((item) => (item.id === selectedId ? { ...item, praises } : item)),
+      );
+      setPraiseOpen(false);
+      setDetailsOpen(false);
+      setSelectedId(null);
+      setSuccessOpen(true);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   return (
@@ -220,7 +263,15 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
             </button>
           </div>
 
-          {filtered.length === 0 ? (
+          <DashboardFetchState
+            loading={loading}
+            error={error}
+            loadingLabel={dictionary.common.loading}
+            retryLabel={dictionary.common.retry}
+            onRetry={() => void load()}
+          />
+
+          {!loading && filtered.length === 0 ? (
             <DashboardItemsEmptyState
               title={t.emptyTitle}
               description={t.emptyDescription}
@@ -232,7 +283,7 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
                   key={item.id}
                   item={item}
                   locale={locale}
-                  categoryLabel={categoryLabels[item.category]}
+                  categoryLabel={item.typeName || t.filterAll}
                   showMoreLabel={t.showMore}
                   onShowMore={openDetails}
                 />
@@ -266,7 +317,7 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
         locale={locale}
         item={selectedItem}
         categoryLabel={
-          selectedItem ? categoryLabels[selectedItem.category] : ""
+          selectedItem?.typeName || ""
         }
         praisesTitle={t.praisesTitle}
         sendPraiseLabel={t.sendPraise}

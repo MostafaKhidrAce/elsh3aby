@@ -1,5 +1,4 @@
-import { AchievementDetailsPage } from "@/components/dashboard/achievements/AchievementDetailsPage";
-import { getAchievementById } from "@/lib/dashboard/dummy-achievements";
+import { AchievementDetailsLoader } from "@/components/dashboard/achievements/AchievementDetailsLoader";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -11,15 +10,13 @@ export default async function DashboardAchievementDetailsPage({
 }) {
   const { locale: localeParam, id } = await params;
   if (!isLocale(localeParam)) notFound();
-  const item = getAchievementById(id);
-  if (!item) notFound();
   const dictionary = await getDictionary(localeParam);
 
   return (
-    <AchievementDetailsPage
+    <AchievementDetailsLoader
       locale={localeParam}
       dictionary={dictionary}
-      item={item}
+      bookId={id}
     />
   );
 }

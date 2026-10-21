@@ -5,6 +5,9 @@ export type NewsPublishStatus = "review" | "accepted" | "rejected";
 export type DummyNewsPublishRequest = {
   id: string;
   type: NewsPublishTypeId;
+  typeId?: number;
+  typeName?: string;
+  typeNameEn?: string;
   status: NewsPublishStatus;
   title: string;
   titleEn: string;

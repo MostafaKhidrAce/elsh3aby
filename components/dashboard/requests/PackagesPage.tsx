@@ -1,14 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
+import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
+import { ApiError } from "@/lib/api/client";
 import {
-  SUBSCRIPTION_PACKAGES,
-  setActivePackage,
-} from "@/lib/dashboard/dummy-venue-bookings";
+  getSubscriptions,
+  subscribeToPackage,
+  type SubscriptionPackage,
+} from "@/lib/api/subscriptions";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -24,13 +29,31 @@ export function PackagesPage({ locale, dictionary }: PackagesPageProps) {
   const t = dictionary.dashboard.requestsPage;
   const isAr = locale === "ar";
   const router = useRouter();
+  const { token, isReady } = useAuth();
   const requestsHref = `/${locale}/dashboard/requests`;
   const dashboardHref = `/${locale}/dashboard`;
+  const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  function handleSubscribe(packageId: string) {
-    console.log("subscribe", packageId);
-    setActivePackage(true);
-    router.push(requestsHref);
+  useEffect(() => {
+    if (!isReady || !token) return;
+    void getSubscriptions(locale, token)
+      .then(setPackages)
+      .catch((err) =>
+        setError(err instanceof ApiError ? err.message : dictionary.common.loadError),
+      )
+      .finally(() => setLoading(false));
+  }, [isReady, token, locale, dictionary.common.loadError]);
+
+  async function handleSubscribe(packageId: number) {
+    if (!token) return;
+    try {
+      await subscribeToPackage(packageId, locale, token);
+      router.push(requestsHref);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   return (
@@ -68,9 +91,17 @@ export function PackagesPage({ locale, dictionary }: PackagesPageProps) {
           {t.packagesIntro}
         </p>
 
+        <DashboardFetchState
+          loading={loading}
+          error={error}
+          loadingLabel={dictionary.common.loading}
+        />
+
         <div className="mx-auto grid max-w-3xl gap-4 sm:grid-cols-2 sm:gap-5">
-          {SUBSCRIPTION_PACKAGES.map((pkg) => {
-            const duration = isAr ? pkg.durationAr : pkg.durationEn;
+          {packages.map((pkg) => {
+            const duration = isAr
+              ? `${pkg.durationMonths} شهر`
+              : `${pkg.durationMonths} months`;
             return (
               <article
                 key={pkg.id}

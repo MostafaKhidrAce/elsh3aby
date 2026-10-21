@@ -9,6 +9,7 @@ export type AchievementBadgeTone = "gold" | "green" | "blue";
 export type DummyAchievement = {
   id: string;
   category: Exclude<AchievementCategoryId, "all">;
+  categoryId?: number;
   badge: string;
   badgeEn: string;
   badgeTone: AchievementBadgeTone;

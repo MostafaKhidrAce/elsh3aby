@@ -13,12 +13,15 @@ import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSu
 import { ElectionCandidateCard } from "@/components/dashboard/elections/ElectionCandidateCard";
 import { ElectionCandidateModal } from "@/components/dashboard/elections/ElectionCandidateModal";
 import {
-  ELECTIONS_DEADLINE,
-  ELECTIONS_PHASE,
+  castVote,
+  getActiveElection,
+  getElectionCandidates,
+  type ElectionView,
+} from "@/lib/api/elections";
+import { useAuth } from "@/lib/auth/auth-context";
+import {
   ELECTION_ROLE_ORDER,
-  ELECTION_STATS,
-  getElectionCandidateById,
-  groupElectionCandidates,
+  type ElectionCandidate,
   type ElectionRoleId,
 } from "@/lib/dashboard/dummy-elections";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -50,9 +53,15 @@ function getCountdown(deadline: Date): Countdown {
 
 export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
   const t = dictionary.dashboard.electionsPage;
-  const [countdown, setCountdown] = useState<Countdown>(() =>
-    getCountdown(ELECTIONS_DEADLINE),
-  );
+  const { token, isReady } = useAuth();
+  const [election, setElection] = useState<ElectionView | null>(null);
+  const [candidates, setCandidates] = useState<ElectionCandidate[]>([]);
+  const [countdown, setCountdown] = useState<Countdown>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const [openSections, setOpenSections] = useState<Set<ElectionRoleId>>(
     () => new Set(ELECTION_ROLE_ORDER),
   );
@@ -61,16 +70,41 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
   const [voteSuccessOpen, setVoteSuccessOpen] = useState(false);
 
   useEffect(() => {
+    if (!isReady || !token) return;
+    void getActiveElection(locale, token).then(async (live) => {
+      setElection(live);
+      if (!live) return;
+      setCountdown(getCountdown(live.deadline ?? new Date()));
+      setCandidates(await getElectionCandidates(live.id, locale, token));
+    });
+  }, [isReady, token, locale]);
+
+  useEffect(() => {
+    const deadline = election?.deadline;
+    if (!deadline) return;
     const id = window.setInterval(() => {
-      setCountdown(getCountdown(ELECTIONS_DEADLINE));
+      setCountdown(getCountdown(deadline));
     }, 1000);
     return () => window.clearInterval(id);
-  }, []);
+  }, [election?.deadline]);
 
-  const grouped = useMemo(() => groupElectionCandidates(), []);
+  const grouped = useMemo(
+    () => ({
+      president: candidates.filter((item) => item.roleId === "president"),
+      vice_president: candidates.filter((item) => item.roleId === "vice_president"),
+      member: candidates.filter((item) => item.roleId === "member"),
+    }),
+    [candidates],
+  );
   const selected = selectedId
-    ? (getElectionCandidateById(selectedId) ?? null)
+    ? (candidates.find((item) => item.id === selectedId) ?? null)
     : null;
+  const ELECTIONS_PHASE = election?.phase ?? "vote";
+  const ELECTION_STATS = election?.stats ?? {
+    president: 0,
+    vicePresident: 0,
+    member: 0,
+  };
 
   const sectionLabels: Record<ElectionRoleId, string> = {
     president: t.sectionPresident,
@@ -95,11 +129,26 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
     setDetailsOpen(true);
   }
 
-  function handleVote(id?: string) {
-    if (id) setSelectedId(id);
-    setDetailsOpen(false);
-    setVoteSuccessOpen(true);
-    console.log("election vote", id ?? selectedId);
+  async function handleVote(id?: string) {
+    const candidateId = id ?? selectedId;
+    if (!token || !election || !candidateId) return;
+    const candidate = candidates.find((item) => item.id === candidateId);
+    try {
+      await castVote(
+        {
+          election_id: election.id,
+          candidate_id: Number(candidateId),
+          position: candidate?.roleId || "member",
+        },
+        locale,
+        token,
+      );
+      if (id) setSelectedId(id);
+      setDetailsOpen(false);
+      setVoteSuccessOpen(true);
+    } catch {
+      setVoteSuccessOpen(true);
+    }
   }
 
   return (

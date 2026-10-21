@@ -1,5 +1,4 @@
-import { OfferDetailsPage } from "@/components/dashboard/offers/OfferDetailsPage";
-import { getOfferById } from "@/lib/dashboard/dummy-offers";
+import { OfferDetailsLoader } from "@/components/dashboard/offers/OfferDetailsLoader";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
@@ -11,15 +10,13 @@ export default async function DashboardOfferDetailsPage({
 }) {
   const { locale: localeParam, id } = await params;
   if (!isLocale(localeParam)) notFound();
-  const offer = getOfferById(id);
-  if (!offer) notFound();
   const dictionary = await getDictionary(localeParam);
 
   return (
-    <OfferDetailsPage
+    <OfferDetailsLoader
       locale={localeParam}
       dictionary={dictionary}
-      offer={offer}
+      offerId={id}
     />
   );
 }

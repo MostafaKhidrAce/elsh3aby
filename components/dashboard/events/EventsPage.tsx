@@ -1,21 +1,26 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, Plus } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
 import { EventsCalendarModal } from "@/components/dashboard/events/EventsCalendarModal";
 import { EventsCategorySection } from "@/components/dashboard/events/EventsCategorySection";
 import { EventsDateSlider } from "@/components/dashboard/events/EventsDateSlider";
 import { EventsEmptyState } from "@/components/dashboard/events/EventsEmptyState";
 import { EventsToolbar } from "@/components/dashboard/events/EventsToolbar";
+import { ApiError } from "@/lib/api/client";
+import { getEventTypes, type NamedType } from "@/lib/api/catalog";
 import {
-  DUMMY_EVENTS,
-  SLIDER_DATES,
-  getDatesWithEvents,
-  toDateKey,
-  type EventCategoryId,
-} from "@/lib/dashboard/dummy-events";
+  getEvents,
+  rateEvent,
+  toggleEventReminder,
+  type EventCardView,
+} from "@/lib/api/events";
+import { pickLocalized } from "@/lib/api/localized";
+import { useAuth } from "@/lib/auth/auth-context";
+import { buildSliderDates, toDateKey } from "@/lib/dashboard/dummy-events";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -24,73 +29,134 @@ type EventsPageProps = {
   dictionary: Dictionary;
 };
 
-const CATEGORY_ORDER: EventCategoryId[] = ["wedding", "meetings"];
-
 const cardClass =
   "rounded-[20px] bg-white p-4 shadow-[0_8px_30px_rgba(25,33,61,0.06)] sm:p-5 lg:p-6";
 
 export function EventsPage({ locale, dictionary }: EventsPageProps) {
   const t = dictionary.dashboard.eventsPage;
   const todayKey = toDateKey(new Date());
+  const { token, isReady } = useAuth();
+  const sliderDates = useMemo(() => buildSliderDates(21), []);
 
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [expanded, setExpanded] = useState<Set<EventCategoryId>>(new Set());
-  const [remindedIds, setRemindedIds] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [types, setTypes] = useState<NamedType[]>([]);
+  const [events, setEvents] = useState<EventCardView[]>([]);
+  const [datesWithEvents, setDatesWithEvents] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const datesWithEvents = useMemo(() => getDatesWithEvents(), []);
+  const loadDay = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const [liveTypes, liveEvents] = await Promise.all([
+        getEventTypes(locale, token),
+        getEvents(locale, token, { date: selectedDate, per_page: 50 }),
+      ]);
+      setTypes(liveTypes);
+      setEvents(liveEvents);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    } finally {
+      setLoading(false);
+    }
+  }, [token, locale, selectedDate, dictionary.common.loadError]);
+
+  useEffect(() => {
+    if (!isReady || !token) return;
+    void loadDay();
+  }, [isReady, token, loadDay]);
+
+  useEffect(() => {
+    if (!token) return;
+    const from = sliderDates[0];
+    const to = sliderDates[sliderDates.length - 1];
+    void getEvents(locale, token, { date_from: from, date_to: to, per_page: 50 })
+      .then((items) => setDatesWithEvents(new Set(items.map((item) => item.dateKey))))
+      .catch(() => undefined);
+  }, [token, locale, sliderDates]);
 
   const filteredEvents = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return DUMMY_EVENTS.filter((event) => {
-      if (event.dateKey !== selectedDate) return false;
-      if (!query) return true;
-      const haystack = [
-        event.title,
-        event.titleEn,
-        event.description,
-        event.descriptionEn,
-        event.location,
-        event.locationEn,
-        event.publisherName,
-        event.publisherNameEn,
-      ]
+    if (!query) return events;
+    return events.filter((event) =>
+      [event.title, event.description, event.location, event.publisherName, event.branch]
+        .filter(Boolean)
         .join(" ")
-        .toLowerCase();
-      return haystack.includes(query);
-    });
-  }, [selectedDate, searchQuery]);
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [events, searchQuery]);
 
-  const eventsTodayCount = useMemo(
-    () => DUMMY_EVENTS.filter((event) => event.dateKey === selectedDate).length,
-    [selectedDate],
-  );
+  const hijriLabel = events.find((event) => event.hijriLabel)?.hijriLabel || t.hijriDate;
 
-  const categoryTitle = (id: EventCategoryId) =>
-    id === "wedding" ? t.categoryWedding : t.categoryMeetings;
+  const groupedTypes = useMemo(() => {
+    const used = new Map<number, EventCardView[]>();
+    for (const event of filteredEvents) {
+      const list = used.get(event.typeId) ?? [];
+      list.push(event);
+      used.set(event.typeId, list);
+    }
+    const ordered = types
+      .filter((type) => used.has(type.id))
+      .map((type) => ({
+        id: String(type.id),
+        title: pickLocalized(locale, type.name_ar, type.name_en, type.name || ""),
+        events: used.get(type.id) ?? [],
+      }));
+    for (const [typeId, typeEvents] of used) {
+      if (types.some((type) => type.id === typeId)) continue;
+      ordered.push({
+        id: String(typeId),
+        title: typeEvents[0]?.typeName || t.allSections,
+        events: typeEvents,
+      });
+    }
+    return ordered;
+  }, [filteredEvents, types, locale, t.allSections]);
 
-  function toggleExpand(categoryId: EventCategoryId) {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(categoryId)) next.delete(categoryId);
-      else next.add(categoryId);
-      return next;
-    });
+  async function handleRemind(id: number) {
+    if (!token) return;
+    try {
+      await toggleEventReminder(id, locale, token);
+      setEvents((prev) =>
+        prev.map((event) =>
+          event.id === id ? { ...event, isReminderSet: !event.isReminderSet } : event,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
-  function toggleRemind(id: string) {
-    setRemindedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+  async function handleRate(id: number, rating: number) {
+    if (!token) return;
+    try {
+      await rateEvent(id, rating, locale, token);
+      setEvents((prev) =>
+        prev.map((event) =>
+          event.id === id
+            ? {
+                ...event,
+                isRated: true,
+                canRate: false,
+                ratingAverage: rating,
+                ratingCount: event.ratingCount + 1,
+              }
+            : event,
+        ),
+      );
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
+    }
   }
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      {/* Header: title + all events | user menu */}
       <header
         className={`${cardClass} flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between`}
       >
@@ -107,15 +173,14 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
         <UserMenu locale={locale} dictionary={dictionary} />
       </header>
 
-      {/* Date panel: hijri + actions + slider */}
       <section className={`${cardClass} space-y-5`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <p className="text-[20px] font-bold text-[#133D3C] sm:text-[22px]">
-              {t.hijriDate}
+              {hijriLabel}
             </p>
             <p className="text-sm text-[#6B7280]">
-              {t.eventsToday.replace("{count}", String(eventsTodayCount))}
+              {t.eventsToday.replace("{count}", String(events.length))}
             </p>
           </div>
 
@@ -139,7 +204,7 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
         </div>
 
         <EventsDateSlider
-          dates={SLIDER_DATES}
+          dates={sliderDates}
           selectedDate={selectedDate}
           onSelectDate={setSelectedDate}
           weekdays={t.weekdays}
@@ -147,7 +212,6 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
         />
       </section>
 
-      {/* Events list card */}
       <section className={`${cardClass} space-y-6`}>
         <EventsToolbar
           allSectionsLabel={t.allSections}
@@ -157,38 +221,52 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
           onSearchChange={setSearchQuery}
         />
 
-        {filteredEvents.length === 0 ? (
+        <DashboardFetchState
+          loading={loading}
+          error={error}
+          loadingLabel={dictionary.common.loading}
+          retryLabel={dictionary.common.retry}
+          onRetry={() => void loadDay()}
+        />
+
+        {!loading && !error && filteredEvents.length === 0 ? (
           <EventsEmptyState
             title={t.emptyTitle}
             description={t.emptyDescription}
           />
-        ) : (
+        ) : null}
+
+        {!loading && filteredEvents.length > 0 ? (
           <div className="space-y-8">
-            {CATEGORY_ORDER.map((categoryId) => {
-              const events = filteredEvents.filter(
-                (event) => event.category === categoryId,
-              );
-              return (
-                <EventsCategorySection
-                  key={categoryId}
-                  categoryId={categoryId}
-                  title={categoryTitle(categoryId)}
-                  events={events}
-                  locale={locale}
-                  expanded={expanded.has(categoryId)}
-                  onToggleExpand={toggleExpand}
-                  seeMoreLabel={t.seeMore}
-                  seeLessLabel={t.seeLess}
-                  remindLabel={t.remind}
-                  cancelRemindLabel={t.cancelRemind}
-                  bookedByLabel={t.bookedBy}
-                  remindedIds={remindedIds}
-                  onToggleRemind={toggleRemind}
-                />
-              );
-            })}
+            {groupedTypes.map((group) => (
+              <EventsCategorySection
+                key={group.id}
+                categoryId={group.id}
+                title={group.title}
+                events={group.events}
+                locale={locale}
+                expanded={expanded.has(group.id)}
+                onToggleExpand={(id) => {
+                  setExpanded((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  });
+                }}
+                seeMoreLabel={t.seeMore}
+                seeLessLabel={t.seeLess}
+                remindLabel={t.remind}
+                cancelRemindLabel={t.cancelRemind}
+                bookedByLabel={t.bookedBy}
+                rateLabel={t.rateEvent}
+                ratedLabel={t.rated}
+                onToggleRemind={handleRemind}
+                onRate={handleRate}
+              />
+            ))}
           </div>
-        )}
+        ) : null}
       </section>
 
       <EventsCalendarModal

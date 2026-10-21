@@ -6,6 +6,32 @@ type ApiEnvelope<T> = {
   message?: string;
   status_code?: number;
   errors?: Record<string, string[] | string>;
+  meta?: ApiMeta;
+  links?: ApiLinks;
+  categories?: unknown;
+};
+
+export type ApiMeta = {
+  current_page?: number;
+  last_page?: number;
+  per_page?: number;
+  total?: number;
+  from?: number;
+  to?: number;
+};
+
+export type ApiLinks = {
+  first?: string | null;
+  last?: string | null;
+  prev?: string | null;
+  next?: string | null;
+};
+
+export type Paginated<T> = {
+  data: T;
+  meta?: ApiMeta;
+  links?: ApiLinks;
+  message?: string;
 };
 
 export class ApiError extends Error {
@@ -17,6 +43,11 @@ export class ApiError extends Error {
     this.status = status;
   }
 }
+
+export type ApiQuery = Record<
+  string,
+  string | number | boolean | null | undefined
+>;
 
 function localizationHeaders(
   locale?: Locale,
@@ -54,25 +85,87 @@ function resolveUrl(pathOrUrl: string): string {
     : apiUrl(pathOrUrl);
 }
 
-export async function apiGet<T>(path: string, locale?: Locale): Promise<T> {
-  const response = await fetch(apiUrl(path), {
-    headers: localizationHeaders(locale),
-    cache: "no-store",
-  });
-  const json = await parseJson<T>(response);
+export function withQuery(path: string, query?: ApiQuery): string {
+  if (!query) return path;
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(query)) {
+    if (value === undefined || value === null || value === "") continue;
+    params.set(key, String(value));
+  }
+  const qs = params.toString();
+  if (!qs) return path;
+  return path.includes("?") ? `${path}&${qs}` : `${path}?${qs}`;
+}
 
+function assertOk<T>(
+  response: Response,
+  json: ApiEnvelope<T>,
+  allowMissingData = false,
+): void {
   if (!response.ok || json.status_code === 404) {
     throw new ApiError(
       json.status_code ?? response.status,
       envelopeMessage(json, response.statusText),
     );
   }
-
-  if (json.data === undefined) {
+  if (!allowMissingData && json.data === undefined) {
     throw new ApiError(response.status, json.message ?? "Invalid API response");
   }
+}
 
-  return json.data;
+export async function apiGet<T>(
+  path: string,
+  locale?: Locale,
+  token?: string | null,
+  query?: ApiQuery,
+): Promise<T> {
+  const response = await fetch(resolveUrl(withQuery(path, query)), {
+    headers: localizationHeaders(locale, token),
+    cache: "no-store",
+  });
+  const json = await parseJson<T>(response);
+  assertOk(response, json);
+  return json.data as T;
+}
+
+export async function apiGetPage<T>(
+  path: string,
+  locale?: Locale,
+  token?: string | null,
+  query?: ApiQuery,
+): Promise<Paginated<T>> {
+  const response = await fetch(resolveUrl(withQuery(path, query)), {
+    headers: localizationHeaders(locale, token),
+    cache: "no-store",
+  });
+  const json = await parseJson<T>(response);
+  assertOk(response, json);
+  return {
+    data: json.data as T,
+    meta: json.meta,
+    links: json.links,
+    message: json.message,
+  };
+}
+
+export async function apiGetRaw<T extends Record<string, unknown>>(
+  path: string,
+  locale?: Locale,
+  token?: string | null,
+  query?: ApiQuery,
+): Promise<T> {
+  const response = await fetch(resolveUrl(withQuery(path, query)), {
+    headers: localizationHeaders(locale, token),
+    cache: "no-store",
+  });
+  const json = (await parseJson<unknown>(response)) as T & ApiEnvelope<unknown>;
+  if (!response.ok || json.status_code === 404) {
+    throw new ApiError(
+      (json.status_code as number | undefined) ?? response.status,
+      envelopeMessage(json, response.statusText),
+    );
+  }
+  return json;
 }
 
 export async function apiPost<T>(
@@ -107,7 +200,7 @@ export async function apiPostForm<T>(
   locale?: Locale,
   token?: string | null,
 ): Promise<T> {
-  const response = await fetch(apiUrl(path), {
+  const response = await fetch(resolveUrl(path), {
     method: "POST",
     headers: localizationHeaders(locale, token),
     body,
@@ -121,6 +214,49 @@ export async function apiPostForm<T>(
     );
   }
 
+  return (json.data ?? json) as T;
+}
+
+export async function apiPut<T>(
+  path: string,
+  body: unknown,
+  locale?: Locale,
+  token?: string | null,
+): Promise<T> {
+  const response = await fetch(resolveUrl(path), {
+    method: "PUT",
+    headers: {
+      ...localizationHeaders(locale, token),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  const json = await parseJson<T>(response);
+  if (!response.ok) {
+    throw new ApiError(
+      json.status_code ?? response.status,
+      envelopeMessage(json, response.statusText),
+    );
+  }
+  return (json.data ?? json) as T;
+}
+
+export async function apiDelete<T>(
+  path: string,
+  locale?: Locale,
+  token?: string | null,
+): Promise<T | null> {
+  const response = await fetch(resolveUrl(path), {
+    method: "DELETE",
+    headers: localizationHeaders(locale, token),
+  });
+  const json = await parseJson<T>(response);
+  if (!response.ok) {
+    throw new ApiError(
+      json.status_code ?? response.status,
+      envelopeMessage(json, response.statusText),
+    );
+  }
   return (json.data ?? json) as T;
 }
 
