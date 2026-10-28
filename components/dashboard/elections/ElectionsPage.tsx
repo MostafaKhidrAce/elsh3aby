@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { DashboardAlertModal } from "@/components/dashboard/DashboardAlertModal";
+import { useSubscriptionGate } from "@/components/dashboard/SubscriptionGate";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
 import { ElectionCandidateCard } from "@/components/dashboard/elections/ElectionCandidateCard";
 import { ElectionCandidateModal } from "@/components/dashboard/elections/ElectionCandidateModal";
@@ -57,6 +58,7 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
   const t = dictionary.dashboard.electionsPage;
   const router = useRouter();
   const { token, isReady } = useAuth();
+  const { ensureCanAdd } = useSubscriptionGate();
   const [election, setElection] = useState<ElectionView | null>(null);
   const [candidates, setCandidates] = useState<ElectionCandidate[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -154,7 +156,9 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
     setDetailsOpen(true);
   }
 
-  function handleNominateClick() {
+  async function handleNominateClick() {
+    const allowed = await ensureCanAdd();
+    if (!allowed) return;
     if (election?.canNominate) {
       router.push(nominateHref);
       return;

@@ -13,6 +13,7 @@ type SubscriptionRequiredModalProps = {
   cancelLabel: string;
   packagesHref: string;
   onClose: () => void;
+  onGoToPackages?: () => void;
 };
 
 export function SubscriptionRequiredModal({
@@ -23,6 +24,7 @@ export function SubscriptionRequiredModal({
   cancelLabel,
   packagesHref,
   onClose,
+  onGoToPackages,
 }: SubscriptionRequiredModalProps) {
   const isAr = locale === "ar";
   const [mounted, setMounted] = useState(false);
@@ -95,7 +97,8 @@ export function SubscriptionRequiredModal({
           </button>
           <Link
             href={packagesHref}
-            className="inline-flex h-[50px] flex-1 items-center justify-center rounded-[12px] bg-[#D5AF34] text-[15px] font-bold text-white transition hover:brightness-95 sm:h-[54px]"
+            onClick={onGoToPackages}
+            className="inline-flex h-[50px] flex-1 items-center justify-center rounded-[12px] bg-[#D5AF34] text-[15px] font-bold text-[#133D3C] transition hover:brightness-95 sm:h-[54px]"
           >
             {goToPackagesLabel}
           </Link>

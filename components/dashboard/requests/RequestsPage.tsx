@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { Files, Plus, Search } from "lucide-react";
+import { SubscriptionAddLink } from "@/components/dashboard/SubscriptionGate";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
 import { DashboardItemsEmptyState } from "@/components/dashboard/DashboardItemsEmptyState";
@@ -10,7 +10,6 @@ import { OfferCard } from "@/components/dashboard/offers/OfferCard";
 import { NewsPublishTypeSection } from "@/components/dashboard/requests/NewsPublishTypeSection";
 import { RequestCategoryFilters } from "@/components/dashboard/requests/RequestCategoryFilters";
 import { RequestStatusAccordion } from "@/components/dashboard/requests/RequestStatusAccordion";
-import { SubscriptionRequiredModal } from "@/components/dashboard/requests/SubscriptionRequiredModal";
 import { VenueBookingCard } from "@/components/dashboard/requests/VenueBookingCard";
 import {
   NEWS_PUBLISH_TYPES,
@@ -37,7 +36,6 @@ import {
   getPublishRequests,
   getRequestsCounts,
 } from "@/lib/api/requests";
-import { hasLiveActivePackage } from "@/lib/api/subscriptions";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -79,15 +77,13 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
     Set<NewsPublishTypeId>
   >(() => new Set());
   const [bookingExpanded, setBookingExpanded] = useState(false);
-  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
-  const [packageActive, setPackageActive] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      const [help, consult, offerPage, news, venue, counts, active] =
+      const [help, consult, offerPage, news, venue, counts] =
         await Promise.all([
           getHelpOrders(locale, token),
           getConsultations(locale, token),
@@ -95,7 +91,6 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
           getPublishRequests(locale, token),
           getPlaceBookings(locale, token),
           getRequestsCounts(locale, token),
-          hasLiveActivePackage(locale, token),
         ]);
       setHelpItems(help);
       setConsultItems(consult);
@@ -103,7 +98,6 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
       setNewsItems(news);
       setBookings(venue);
       setApiCounts(counts);
-      setPackageActive(active);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
     } finally {
@@ -255,61 +249,48 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
 
   const grouped = useMemo(() => groupByStatus(filtered), [filtered]);
 
+  const addBtnClass =
+    "inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#D5AF34] px-6 py-3 text-sm font-bold text-white transition hover:brightness-95";
+
   const newHelpButton = (
-    <Link
-      href={`/${locale}/dashboard/add-request`}
-      className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#D5AF34] px-6 py-3 text-sm font-bold text-white transition hover:brightness-95"
-    >
+    <SubscriptionAddLink href={`/${locale}/dashboard/add-request`} className={addBtnClass}>
       <Plus className="h-4 w-4" strokeWidth={2.5} />
       {t.newHelp}
-    </Link>
+    </SubscriptionAddLink>
   );
 
   const newConsultButton = (
-    <Link
+    <SubscriptionAddLink
       href={`/${locale}/dashboard/add-consultation`}
-      className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#D5AF34] px-6 py-3 text-sm font-bold text-white transition hover:brightness-95"
+      className={addBtnClass}
     >
       <Plus className="h-4 w-4" strokeWidth={2.5} />
       {t.newConsult}
-    </Link>
+    </SubscriptionAddLink>
   );
 
   const newOfferButton = (
-    <Link
-      href={`/${locale}/dashboard/add-offer`}
-      className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#D5AF34] px-6 py-3 text-sm font-bold text-white transition hover:brightness-95"
-    >
+    <SubscriptionAddLink href={`/${locale}/dashboard/add-offer`} className={addBtnClass}>
       <Plus className="h-4 w-4" strokeWidth={2.5} />
       {t.newOffer}
-    </Link>
+    </SubscriptionAddLink>
   );
 
   const newNewsButton = (
-    <Link
+    <SubscriptionAddLink
       href={`/${locale}/dashboard/add-publish-news`}
-      className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#D5AF34] px-6 py-3 text-sm font-bold text-white transition hover:brightness-95"
+      className={addBtnClass}
     >
       <Plus className="h-4 w-4" strokeWidth={2.5} />
       {t.newNewsPublish}
-    </Link>
+    </SubscriptionAddLink>
   );
 
   const newBookingButton = (
-    <button
-      type="button"
-      onClick={() => {
-        if (!packageActive) {
-          setSubscriptionModalOpen(true);
-          return;
-        }
-        window.location.assign(`/${locale}/dashboard/booking`);
-      }}
-      className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#D5AF34] px-6 py-3 text-sm font-bold text-white transition hover:brightness-95"
-    >
+    <SubscriptionAddLink href={`/${locale}/dashboard/booking/new`} className={addBtnClass}>
       <Plus className="h-4 w-4" strokeWidth={2.5} />
       {t.newBooking}
-    </button>
+    </SubscriptionAddLink>
   );
 
   function toggleStatus(status: RequestStatus) {
@@ -539,17 +520,6 @@ export function RequestsPage({ locale, dictionary }: RequestsPageProps) {
         </section>
       </div>
 
-      {subscriptionModalOpen ? (
-        <SubscriptionRequiredModal
-          locale={locale}
-          title={t.subscriptionRequiredTitle}
-          description={t.subscriptionRequiredDescription}
-          goToPackagesLabel={t.goToPackages}
-          cancelLabel={t.cancel}
-          packagesHref={`/${locale}/dashboard/packages`}
-          onClose={() => setSubscriptionModalOpen(false)}
-        />
-      ) : null}
     </>
   );
 }

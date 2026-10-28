@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { SubscriptionAddLink, useSubscriptionGate } from "@/components/dashboard/SubscriptionGate";
 import {
   AlertCircle,
   Building2,
@@ -71,6 +71,7 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
   const t = dictionary.dashboard.bookingPage;
   const isAr = locale === "ar";
   const router = useRouter();
+  const { ensureCanAdd } = useSubscriptionGate();
 
   const [viewMonth, setViewMonth] = useState(() =>
     startOfMonth(new Date(2026, 0, 1)),
@@ -149,6 +150,8 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
   }
 
   async function handleBookNow() {
+    const allowed = await ensureCanAdd();
+    if (!allowed) return;
     if (selectedDate && token) {
       const available = await checkBookingAvailability(selectedDate, locale, token);
       if (!available) {
@@ -223,13 +226,13 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
             <h2 className="text-lg font-bold text-[#133D3C] sm:text-xl">
               {t.familyBookingTitle}
             </h2>
-            <Link
+            <SubscriptionAddLink
               href={buildNewHref()}
               className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#D5AF34] px-5 py-3 text-sm font-bold text-white transition hover:brightness-95"
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} />
               {t.addBooking}
-            </Link>
+            </SubscriptionAddLink>
           </div>
 
           <div className="space-y-4">

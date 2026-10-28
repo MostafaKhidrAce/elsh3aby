@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
 import { DashboardAlertModal } from "@/components/dashboard/DashboardAlertModal";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { SubscriptionGateProvider } from "@/components/dashboard/SubscriptionGate";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -38,6 +39,7 @@ export function DashboardShell({
   }
 
   return (
+    <SubscriptionGateProvider locale={locale} dictionary={dictionary}>
     <div className="min-h-dvh bg-[#F5F5F5]">
       <div className="mx-auto flex min-h-dvh w-full max-w-[1600px] gap-3 p-2 sm:gap-4 sm:p-3 lg:gap-5 lg:p-4">
         <div className="hidden w-[280px] shrink-0 lg:block xl:w-[300px]">
@@ -111,5 +113,6 @@ export function DashboardShell({
         />
       ) : null}
     </div>
+    </SubscriptionGateProvider>
   );
 }

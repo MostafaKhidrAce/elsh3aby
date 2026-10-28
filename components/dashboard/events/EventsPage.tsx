@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { CalendarDays, Plus } from "lucide-react";
+import { SubscriptionAddLink } from "@/components/dashboard/SubscriptionGate";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
 import { EventsCalendarModal } from "@/components/dashboard/events/EventsCalendarModal";
@@ -244,13 +244,13 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
               <CalendarDays className="h-4 w-4" strokeWidth={2} />
               {t.calendar}
             </button>
-            <Link
+            <SubscriptionAddLink
               href={`/${locale}/dashboard/add-event`}
               className="inline-flex items-center gap-2 rounded-[12px] bg-[#D5AF34] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95"
             >
               <Plus className="h-4 w-4" strokeWidth={2.5} />
               {t.addEvent}
-            </Link>
+            </SubscriptionAddLink>
           </div>
         </div>
 
