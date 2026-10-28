@@ -1,4 +1,3 @@
-import { MarketProductDetailsPage } from "@/components/dashboard/market/MarketProductDetailsPage";
 import { MarketProductLoader } from "@/components/dashboard/market/MarketProductLoader";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
@@ -14,14 +13,11 @@ export default async function DashboardMarketProductPage({
   const dictionary = await getDictionary(localeParam);
 
   return (
-    <MarketProductLoader locale={localeParam} dictionary={dictionary} productId={id}>
-      {(product) => (
-        <MarketProductDetailsPage
-          locale={localeParam}
-          dictionary={dictionary}
-          product={product}
-        />
-      )}
-    </MarketProductLoader>
+    <MarketProductLoader
+      locale={localeParam}
+      dictionary={dictionary}
+      productId={id}
+      view="details"
+    />
   );
 }

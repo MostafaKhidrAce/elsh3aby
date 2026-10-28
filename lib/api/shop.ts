@@ -1,6 +1,6 @@
 import { apiGet, apiGetPage, apiPost, type ApiQuery } from "@/lib/api/client";
 import { asList } from "@/lib/api/catalog";
-import { extractImageUrls, pairFromUnknown, pairLocalized, resolveMedia } from "@/lib/api/localized";
+import { extractImageUrls, pairLocalized, pairNamed, resolveMedia } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
 import type { MarketProduct } from "@/lib/dashboard/dummy-market";
 
@@ -58,10 +58,14 @@ export function toMarketProduct(item: ApiProduct, _locale: Locale): MarketProduc
   );
   const title = pairLocalized(item.title_ar, item.title_en || item.title);
   const description = pairLocalized(item.description_ar, item.description_en || item.description);
-  const category = pairFromUnknown(
-    item.category,
-    item.category_label_ar || item.category_label_en || item.category_label || "",
-  );
+  const categorySlug = typeof item.category === "string" ? item.category : "";
+  const category =
+    item.category && typeof item.category === "object"
+      ? pairNamed(item.category, item.category_label || categorySlug)
+      : pairLocalized(
+          item.category_label_ar || item.category_label,
+          item.category_label_en || categorySlug,
+        );
   return {
     id: String(item.id),
     title: title.ar,
@@ -70,8 +74,8 @@ export function toMarketProduct(item: ApiProduct, _locale: Locale): MarketProduc
     shortDescriptionEn: description.en.slice(0, 80),
     description: description.ar,
     descriptionEn: description.en,
-    category: category.ar || item.category_label || "",
-    categoryEn: category.en || item.category_label || category.ar,
+    category: category.ar,
+    categoryEn: category.en,
     price: Number(item.price ?? 0),
     images: images.length ? images : [FALLBACK],
   };

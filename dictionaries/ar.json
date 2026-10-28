@@ -386,7 +386,7 @@
     "members": "أعضاء المجلس الإداري",
     "elections": "انتخابات صندوق العائلة",
     "booking": "حجز مقر",
-    "market": "سوق القيصرية",
+    "market": "متجر العائلة",
     "achievements": "منجزات الصندوق",
     "profile": "الملف الشخصي",
     "logout": "تسجيل خروج",
@@ -643,9 +643,9 @@
       "back": "رجوع"
     },
     "marketPage": {
-      "title": "سوق القيصرية",
+      "title": "متجر العائلة",
       "subtitle": "سوق العائلة",
-      "tabMarket": "سوق القيصرية",
+      "tabMarket": "متجر العائلة",
       "tabOffers": "العروض والخصومات",
       "searchPlaceholder": "بحث",
       "buyNow": "شراء الآن",

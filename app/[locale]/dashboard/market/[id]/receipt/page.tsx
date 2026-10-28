@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { MarketReceiptPage } from "@/components/dashboard/market/MarketReceiptPage";
 import { MarketProductLoader } from "@/components/dashboard/market/MarketProductLoader";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
@@ -16,15 +15,12 @@ export default async function DashboardMarketReceiptPage({
 
   return (
     <Suspense fallback={null}>
-      <MarketProductLoader locale={localeParam} dictionary={dictionary} productId={id}>
-        {(product) => (
-          <MarketReceiptPage
-            locale={localeParam}
-            dictionary={dictionary}
-            product={product}
-          />
-        )}
-      </MarketProductLoader>
+      <MarketProductLoader
+        locale={localeParam}
+        dictionary={dictionary}
+        productId={id}
+        view="receipt"
+      />
     </Suspense>
   );
 }

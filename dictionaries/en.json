@@ -386,7 +386,7 @@
     "members": "Administrative board members",
     "elections": "Family fund elections",
     "booking": "Venue booking",
-    "market": "Qaisariyah market",
+    "market": "Family store",
     "achievements": "Fund achievements",
     "profile": "Personal profile",
     "logout": "Log out",
@@ -643,9 +643,9 @@
       "back": "Back"
     },
     "marketPage": {
-      "title": "Al-Qaysariya Market",
+      "title": "Family store",
       "subtitle": "Family market",
-      "tabMarket": "Al-Qaysariya Market",
+      "tabMarket": "Family store",
       "tabOffers": "Offers and discounts",
       "searchPlaceholder": "Search",
       "buyNow": "Buy now",
