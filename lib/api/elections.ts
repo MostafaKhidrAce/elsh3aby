@@ -22,6 +22,7 @@ type ApiElection = {
   end_date?: string | null;
   can_nominate?: boolean;
   can_vote?: boolean;
+  is_active?: boolean | number | null;
 };
 
 type ApiCandidate = {
@@ -105,17 +106,65 @@ function electionPhase(item: ApiElection): ElectionPhase {
   return "vote";
 }
 
+const INACTIVE_STATUS = new Set([
+  "inactive",
+  "completed",
+  "complete",
+  "ended",
+  "closed",
+  "cancelled",
+  "canceled",
+  "finished",
+  "archived",
+]);
+
+function isElectionEnabled(item: ApiElection): boolean {
+  if (item.is_active === false || item.is_active === 0) return false;
+  const status = (item.status || "").toLowerCase().trim();
+  const type = (item.type || "").toLowerCase().trim();
+  if (INACTIVE_STATUS.has(status) || INACTIVE_STATUS.has(type)) return false;
+  if (item.can_nominate === false && item.can_vote === false) return false;
+  const deadlineRaw = item.voting_end_at || item.nomination_end_at || item.end_date;
+  if (deadlineRaw) {
+    const deadline = new Date(deadlineRaw);
+    if (!Number.isNaN(deadline.getTime()) && deadline.getTime() < Date.now()) {
+      return false;
+    }
+  }
+  return true;
+}
+
 export async function getElections(locale: Locale, token: string, query?: ApiQuery) {
   const page = await apiGetPage<ApiElection[]>("/elections", locale, token, query);
   return asList<ApiElection>(page.data);
+}
+
+async function findEnabledElection(
+  locale: Locale,
+  token: string,
+): Promise<ApiElection | null> {
+  try {
+    const listed = await getElections(locale, token, { type: "active" });
+    return listed.find(isElectionEnabled) ?? null;
+  } catch {
+    try {
+      const listed = await getElections(locale, token);
+      return listed.find(isElectionEnabled) ?? null;
+    } catch {
+      return null;
+    }
+  }
+}
+
+export async function hasActiveElection(locale: Locale, token: string) {
+  return Boolean(await findEnabledElection(locale, token));
 }
 
 export async function getActiveElection(
   locale: Locale,
   token: string,
 ): Promise<ElectionView | null> {
-  const elections = await getElections(locale, token);
-  const current = elections[0];
+  const current = await findEnabledElection(locale, token);
   if (!current) return null;
   let stats = { president: 0, vicePresident: 0, member: 0 };
   try {

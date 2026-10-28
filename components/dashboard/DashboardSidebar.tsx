@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type MouseEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,6 +19,7 @@ import {
   Files,
   type LucideIcon,
 } from "lucide-react";
+import { hasActiveElection } from "@/lib/api/elections";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -26,6 +28,7 @@ type DashboardSidebarProps = {
   locale: Locale;
   dictionary: Dictionary;
   onNavigate?: () => void;
+  onElectionsUnavailable?: () => void;
 };
 
 const GOLD = "#D5AF34";
@@ -49,12 +52,14 @@ export function DashboardSidebar({
   locale,
   dictionary,
   onNavigate,
+  onElectionsUnavailable,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, token } = useAuth();
   const t = dictionary.dashboard;
   const isAr = locale === "ar";
+  const [checkingElections, setCheckingElections] = useState(false);
 
   const items: NavItem[] = [
     {
@@ -138,6 +143,26 @@ export function DashboardSidebar({
     router.push(`/${locale}/home`);
   }
 
+  async function handleElectionsClick(event: MouseEvent<HTMLAnchorElement>) {
+    event.preventDefault();
+    if (checkingElections) return;
+    setCheckingElections(true);
+    try {
+      const enabled = token ? await hasActiveElection(locale, token) : false;
+      onNavigate?.();
+      if (enabled) {
+        router.push(`/${locale}/dashboard/elections`);
+        return;
+      }
+      onElectionsUnavailable?.();
+    } catch {
+      onNavigate?.();
+      router.push(`/${locale}/dashboard/elections`);
+    } finally {
+      setCheckingElections(false);
+    }
+  }
+
   return (
     <aside
       dir={isAr ? "rtl" : "ltr"}
@@ -178,10 +203,13 @@ export function DashboardSidebar({
             <Link
               key={item.key}
               href={item.href}
-              onClick={onNavigate}
+              onClick={
+                item.key === "elections" ? handleElectionsClick : onNavigate
+              }
+              aria-busy={item.key === "elections" ? checkingElections : undefined}
               className={`flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-semibold transition sm:text-[15px] ${
                 active ? "" : "text-[#426463] hover:bg-[#F7F7F7]"
-              }`}
+              } ${item.key === "elections" && checkingElections ? "pointer-events-none opacity-70" : ""}`}
               style={active ? { backgroundColor: GOLD, color: TEXT } : undefined}
             >
               <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />

@@ -29,6 +29,7 @@ export function asList<T>(value: unknown): T[] {
       "members",
       "winners",
       "election_candidates",
+      "elections",
     ]) {
       if (Array.isArray(record[key])) return record[key] as T[];
     }

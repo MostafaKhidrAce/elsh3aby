@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   CircleArrowLeft,
@@ -9,6 +10,7 @@ import {
   Vote,
 } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { DashboardAlertModal } from "@/components/dashboard/DashboardAlertModal";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
 import { ElectionCandidateCard } from "@/components/dashboard/elections/ElectionCandidateCard";
 import { ElectionCandidateModal } from "@/components/dashboard/elections/ElectionCandidateModal";
@@ -53,9 +55,12 @@ function getCountdown(deadline: Date): Countdown {
 
 export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
   const t = dictionary.dashboard.electionsPage;
+  const router = useRouter();
   const { token, isReady } = useAuth();
   const [election, setElection] = useState<ElectionView | null>(null);
   const [candidates, setCandidates] = useState<ElectionCandidate[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const [unavailableOpen, setUnavailableOpen] = useState(false);
   const [countdown, setCountdown] = useState<Countdown>({
     days: 0,
     hours: 0,
@@ -70,13 +75,33 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
   const [voteSuccessOpen, setVoteSuccessOpen] = useState(false);
 
   useEffect(() => {
-    if (!isReady || !token) return;
-    void getActiveElection(locale, token).then(async (live) => {
-      setElection(live);
-      if (!live) return;
-      setCountdown(getCountdown(live.deadline ?? new Date()));
-      setCandidates(await getElectionCandidates(live.id, locale, token));
-    });
+    if (!isReady) return;
+    if (!token) {
+      setLoaded(true);
+      setUnavailableOpen(true);
+      return;
+    }
+    let cancelled = false;
+    void getActiveElection(locale, token)
+      .then(async (live) => {
+        if (cancelled) return;
+        setElection(live);
+        if (!live) {
+          setUnavailableOpen(true);
+          return;
+        }
+        setCountdown(getCountdown(live.deadline ?? new Date()));
+        setCandidates(await getElectionCandidates(live.id, locale, token));
+      })
+      .catch(() => {
+        if (!cancelled) setUnavailableOpen(true);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [isReady, token, locale]);
 
   useEffect(() => {
@@ -129,6 +154,14 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
     setDetailsOpen(true);
   }
 
+  function handleNominateClick() {
+    if (election?.canNominate) {
+      router.push(nominateHref);
+      return;
+    }
+    setUnavailableOpen(true);
+  }
+
   async function handleVote(id?: string) {
     const candidateId = id ?? selectedId;
     if (!token || !election || !candidateId) return;
@@ -170,30 +203,32 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
         </header>
 
         <section className={`${cardClass} space-y-6`}>
-          <div className="flex flex-col gap-4 rounded-[16px] bg-[#F6F1E8] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div className="min-w-0 flex-1 space-y-3">
-              <p className="text-sm font-semibold leading-7 text-[#170F49] sm:text-[15px]">
-                {t.countdownTitle}
-              </p>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-lg font-bold text-[#133D3C] sm:text-xl">
-                <span>
-                  {countdown.days} {t.days}
-                </span>
-                <span>
-                  {countdown.hours} {t.hours}
-                </span>
-                <span>
-                  {countdown.minutes} {t.minutes}
-                </span>
-                <span>
-                  {countdown.seconds} {t.seconds}
-                </span>
+          {election ? (
+            <div className="flex flex-col gap-4 rounded-[16px] bg-[#F6F1E8] p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+              <div className="min-w-0 flex-1 space-y-3">
+                <p className="text-sm font-semibold leading-7 text-[#170F49] sm:text-[15px]">
+                  {election.title || t.countdownTitle}
+                </p>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-lg font-bold text-[#133D3C] sm:text-xl">
+                  <span>
+                    {countdown.days} {t.days}
+                  </span>
+                  <span>
+                    {countdown.hours} {t.hours}
+                  </span>
+                  <span>
+                    {countdown.minutes} {t.minutes}
+                  </span>
+                  <span>
+                    {countdown.seconds} {t.seconds}
+                  </span>
+                </div>
+              </div>
+              <div className="hidden h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#D5AF34]/20 sm:flex">
+                <Vote className="h-8 w-8 text-[#D5AF34]" strokeWidth={1.75} />
               </div>
             </div>
-            <div className="hidden h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[#D5AF34]/20 sm:flex">
-              <Vote className="h-8 w-8 text-[#D5AF34]" strokeWidth={1.75} />
-            </div>
-          </div>
+          ) : null}
 
           <Link
             href={previousHref}
@@ -208,7 +243,7 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
             {t.previousBoardsLink}
           </Link>
 
-          {ELECTIONS_PHASE === "nominate" ? (
+          {loaded && election && ELECTIONS_PHASE === "nominate" ? (
             <>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[16px] border border-[#EFEFEF] bg-white p-5 text-center shadow-[0_4px_16px_rgba(25,33,61,0.04)]">
@@ -232,16 +267,17 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
               </div>
 
               <div className="flex justify-center pt-2">
-                <Link
-                  href={nominateHref}
+                <button
+                  type="button"
+                  onClick={handleNominateClick}
                   className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#D5AF34] px-8 py-3.5 text-sm font-bold text-white transition hover:brightness-95"
                 >
                   <Plus className="h-4 w-4" strokeWidth={2.5} />
                   {t.nominateCta}
-                </Link>
+                </button>
               </div>
             </>
-          ) : (
+          ) : loaded && election ? (
             <div className="space-y-5">
               {ELECTION_ROLE_ORDER.map((roleId) => {
                 const items = grouped[roleId];
@@ -280,16 +316,28 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
               })}
 
               <div className="flex justify-center pt-2">
-                <Link
-                  href={nominateHref}
+                <button
+                  type="button"
+                  onClick={handleNominateClick}
                   className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#D5AF34] px-8 py-3.5 text-sm font-bold text-white transition hover:brightness-95"
                 >
                   <Plus className="h-4 w-4" strokeWidth={2.5} />
                   {t.nominateCta}
-                </Link>
+                </button>
               </div>
             </div>
-          )}
+          ) : loaded ? (
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={handleNominateClick}
+                className="inline-flex items-center justify-center gap-2 rounded-[12px] bg-[#D5AF34] px-8 py-3.5 text-sm font-bold text-white transition hover:brightness-95"
+              >
+                <Plus className="h-4 w-4" strokeWidth={2.5} />
+                {t.nominateCta}
+              </button>
+            </div>
+          ) : null}
         </section>
       </div>
 
@@ -314,6 +362,19 @@ export function ElectionsPage({ locale, dictionary }: ElectionsPageProps) {
           description={t.voteSuccessDescription}
           confirmLabel={t.ok}
           onConfirm={() => setVoteSuccessOpen(false)}
+        />
+      ) : null}
+
+      {unavailableOpen ? (
+        <DashboardAlertModal
+          locale={locale}
+          title={t.unavailableTitle}
+          description={t.unavailableDescription}
+          confirmLabel={t.ok}
+          onConfirm={() => {
+            setUnavailableOpen(false);
+            if (!election) router.push(`/${locale}/dashboard/events`);
+          }}
         />
       ) : null}
     </>

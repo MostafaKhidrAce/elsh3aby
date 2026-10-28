@@ -10,6 +10,7 @@ import Select, {
 } from "react-select";
 import { ArrowRight, Camera, ChevronDown, Upload } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { DashboardAlertModal } from "@/components/dashboard/DashboardAlertModal";
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
 import { ApiError } from "@/lib/api/client";
 import { getActiveElection, nominateCandidate } from "@/lib/api/elections";
@@ -63,12 +64,22 @@ export function NominateForm({ locale, dictionary }: NominateFormProps) {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const [successOpen, setSuccessOpen] = useState(false);
+  const [unavailableOpen, setUnavailableOpen] = useState(false);
   const { token } = useAuth();
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setUnavailableOpen(true);
+      return;
+    }
     void getActiveElection(locale, token).then((election) => {
-      if (election) setElectionId(election.id);
+      if (election?.canNominate) {
+        setElectionId(election.id);
+        return;
+      }
+      setUnavailableOpen(true);
+    }).catch(() => {
+      setUnavailableOpen(true);
     });
   }, [locale, token]);
 
@@ -329,6 +340,19 @@ export function NominateForm({ locale, dictionary }: NominateFormProps) {
           onConfirm={() => {
             setSuccessOpen(false);
             router.push(electionsHref);
+          }}
+        />
+      ) : null}
+
+      {unavailableOpen ? (
+        <DashboardAlertModal
+          locale={locale}
+          title={t.unavailableTitle}
+          description={t.unavailableDescription}
+          confirmLabel={t.ok}
+          onConfirm={() => {
+            setUnavailableOpen(false);
+            router.push(`/${locale}/dashboard/events`);
           }}
         />
       ) : null}

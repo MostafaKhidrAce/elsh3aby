@@ -804,6 +804,8 @@
       "nominateSuccessDescription": "Your nomination has been successfully registered for the upcoming family council elections.",
       "voteSuccessTitle": "Voting completed successfully",
       "voteSuccessDescription": "Thank you for participating in the vote; your vote has been sent successfully, and results will be announced after the voting period ends.",
+      "unavailableTitle": "There are no elections at this time!",
+      "unavailableDescription": "There are no elections for the current board. The election page will be enabled when the current board's term ends.",
       "ok": "OK"
     },
     "requestsPage": {

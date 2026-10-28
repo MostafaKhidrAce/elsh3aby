@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { Menu, X } from "lucide-react";
+import { DashboardAlertModal } from "@/components/dashboard/DashboardAlertModal";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -18,7 +19,9 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   const [open, setOpen] = useState(false);
+  const [electionsUnavailableOpen, setElectionsUnavailableOpen] = useState(false);
   const t = dictionary.dashboard;
+  const electionsCopy = dictionary.dashboard.electionsPage;
   const isAr = locale === "ar";
 
   useEffect(() => {
@@ -39,7 +42,11 @@ export function DashboardShell({
       <div className="mx-auto flex min-h-dvh w-full max-w-[1600px] gap-3 p-2 sm:gap-4 sm:p-3 lg:gap-5 lg:p-4">
         <div className="hidden w-[280px] shrink-0 lg:block xl:w-[300px]">
           <div className="sticky top-4 h-[calc(100dvh-2rem)]">
-            <DashboardSidebar locale={locale} dictionary={dictionary} />
+            <DashboardSidebar
+              locale={locale}
+              dictionary={dictionary}
+              onElectionsUnavailable={() => setElectionsUnavailableOpen(true)}
+            />
           </div>
         </div>
 
@@ -87,10 +94,21 @@ export function DashboardShell({
                 locale={locale}
                 dictionary={dictionary}
                 onNavigate={close}
+                onElectionsUnavailable={() => setElectionsUnavailableOpen(true)}
               />
             </div>
           </div>
         </div>
+      ) : null}
+
+      {electionsUnavailableOpen ? (
+        <DashboardAlertModal
+          locale={locale}
+          title={electionsCopy.unavailableTitle}
+          description={electionsCopy.unavailableDescription}
+          confirmLabel={electionsCopy.ok}
+          onConfirm={() => setElectionsUnavailableOpen(false)}
+        />
       ) : null}
     </div>
   );
