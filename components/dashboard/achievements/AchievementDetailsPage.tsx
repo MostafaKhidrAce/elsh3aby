@@ -34,6 +34,7 @@ export function AchievementDetailsPage({
   const description = isAr ? item.description : item.descriptionEn;
   const badge = isAr ? item.badge : item.badgeEn;
   const author = isAr ? item.author : item.authorEn;
+  const authorImage = item.authorImage || PLACEHOLDER_AVATAR;
   const listHref = `/${locale}/dashboard/achievements`;
   const images = item.images.length > 0 ? item.images : [""];
 
@@ -108,7 +109,7 @@ export function AchievementDetailsPage({
           <div className="flex items-center gap-2">
             <span className="text-sm text-[#9CA3AF]">{t.writtenBy}:</span>
             <Image
-              src={PLACEHOLDER_AVATAR}
+              src={authorImage}
               alt=""
               width={28}
               height={28}

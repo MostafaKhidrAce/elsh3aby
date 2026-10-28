@@ -26,7 +26,11 @@ type ApiBook = {
   description_ar?: string | null;
   description_en?: string | null;
   author_name?: string | null;
+  author_name_ar?: string | null;
+  author_name_en?: string | null;
+  author_image?: string | null;
   cover_image?: string | null;
+  cover_image_url?: string | null;
   image_url?: string | null;
   gallery?: unknown;
   published_date?: string | null;
@@ -41,9 +45,15 @@ const FALLBACK = "/placeholder/user-placeholder-img.svg";
 export function toAchievement(item: ApiBook, _locale: Locale): DummyAchievement {
   const title = pairLocalized(item.title_ar, item.title_en || item.title);
   const description = pairLocalized(item.description_ar, item.description_en || item.description);
-  const images = extractImageUrls(
-    item.gallery ?? item.cover_image ?? item.image_url,
-  ).map((url) => resolveMedia(url, FALLBACK));
+  const author = pairLocalized(
+    item.author_name_ar,
+    item.author_name_en || item.author_name,
+  );
+  const cover = item.cover_image_url || item.cover_image || item.image_url;
+  const gallery = Array.isArray(item.gallery) ? item.gallery : [];
+  const images = extractImageUrls([cover, ...gallery].filter(Boolean)).map((url) =>
+    resolveMedia(url, FALLBACK),
+  );
   const badge = pairNamed(item.category);
   const branch = pairNamed(item.family_branch);
   return {
@@ -59,8 +69,9 @@ export function toAchievement(item: ApiBook, _locale: Locale): DummyAchievement 
     descriptionEn: description.en,
     dateLabel: formatDateTimeLabel(item.published_date || item.created_at, "ar"),
     dateLabelEn: formatDateTimeLabel(item.published_date || item.created_at, "en"),
-    author: item.author_name || "",
-    authorEn: item.author_name || "",
+    author: author.ar,
+    authorEn: author.en,
+    authorImage: item.author_image ? resolveMedia(item.author_image, FALLBACK) : FALLBACK,
     branch: branch.ar,
     branchEn: branch.en,
     images: images.length ? images : [FALLBACK],

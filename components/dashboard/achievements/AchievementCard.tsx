@@ -30,6 +30,7 @@ export function AchievementCard({
   const dateLabel = isAr ? item.dateLabel : item.dateLabelEn;
   const author = isAr ? item.author : item.authorEn;
   const branch = isAr ? item.branch : item.branchEn;
+  const authorImage = item.authorImage || PLACEHOLDER_AVATAR;
   const href = `/${locale}/dashboard/achievements/${item.id}`;
 
   return (
@@ -56,7 +57,7 @@ export function AchievementCard({
 
         <div className="flex items-center gap-2">
           <Image
-            src={PLACEHOLDER_AVATAR}
+            src={authorImage}
             alt=""
             width={28}
             height={28}
@@ -68,9 +69,11 @@ export function AchievementCard({
           </p>
         </div>
 
-        <span className="inline-flex w-fit rounded-md bg-[#F4E8C0] px-2.5 py-1 text-[11px] font-semibold text-[#D5AF34]">
-          {branch}
-        </span>
+        {branch ? (
+          <span className="inline-flex w-fit rounded-md bg-[#F4E8C0] px-2.5 py-1 text-[11px] font-semibold text-[#D5AF34]">
+            {branch}
+          </span>
+        ) : null}
       </Link>
     </article>
   );

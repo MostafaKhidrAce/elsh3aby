@@ -21,6 +21,7 @@ export type DummyAchievement = {
   dateLabelEn: string;
   author: string;
   authorEn: string;
+  authorImage?: string;
   branch: string;
   branchEn: string;
   images: string[];
