@@ -65,8 +65,6 @@ export function HomePageClient({ locale, dictionary }: HomePageClientProps) {
       </div>
       <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
         <ServicesSection
-          locale={locale}
-          dictionary={dictionary}
           eyebrow={services.eyebrow}
           title={services.title}
           description={services.description}

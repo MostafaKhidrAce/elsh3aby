@@ -1,15 +1,7 @@
-"use client";
-
 import Image from "next/image";
-import { useLoginRequired } from "@/components/auth/RouteGuard";
-import { useAuth } from "@/lib/auth/auth-context";
-import type { Dictionary } from "@/lib/i18n/get-dictionary";
-import type { Locale } from "@/lib/i18n/config";
 import type { ServiceCardView } from "@/lib/api/website-view";
 
 type ServicesSectionProps = {
-  locale: Locale;
-  dictionary: Dictionary;
   eyebrow: string;
   title: string;
   description: string;
@@ -17,24 +9,11 @@ type ServicesSectionProps = {
 };
 
 export function ServicesSection({
-  locale,
-  dictionary,
   eyebrow,
   title,
   description,
   cards,
 }: ServicesSectionProps) {
-  const t = dictionary.home.servicesSection;
-  const isAr = locale === "ar";
-  const { isAuthenticated } = useAuth();
-  const { openLoginRequired } = useLoginRequired();
-
-  function handleViewMore() {
-    if (!isAuthenticated) {
-      openLoginRequired();
-    }
-  }
-
   return (
     <section id="services-section" className="w-full">
       <div className="mx-auto w-full max-w-7xl px-3 sm:px-5 lg:px-12 xl:max-w-[1400px] xl:px-16">
@@ -90,38 +69,6 @@ export function ServicesSection({
                 >
                   {card.description}
                 </p>
-
-                <button
-                  type="button"
-                  dir="ltr"
-                  onClick={handleViewMore}
-                  className="mt-3 inline-flex w-fit items-center gap-2 text-[14px] font-medium transition hover:opacity-80 lg:text-[16px]"
-                  style={{ color: "#133D3C" }}
-                >
-                  {isAr ? (
-                    <>
-                      <Image
-                        src="/arrows/green-left-arrow.svg"
-                        alt=""
-                        width={14}
-                        height={14}
-                        className="h-3.5 w-3.5"
-                      />
-                      <span>{t.viewMore}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>{t.viewMore}</span>
-                      <Image
-                        src="/arrows/green-left-arrow.svg"
-                        alt=""
-                        width={14}
-                        height={14}
-                        className="h-3.5 w-3.5 -scale-x-100"
-                      />
-                    </>
-                  )}
-                </button>
               </article>
             ))}
           </div>
