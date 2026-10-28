@@ -25,13 +25,6 @@ const FALLBACK_HERO_BACKGROUNDS = [
   "/backgrounds/hero-section-bg-3.jpg",
 ];
 
-const FALLBACK_SERVICE_IMAGE = "/dummy%20imgs/home%20page/dummy-card-img.svg";
-const FALLBACK_EVENT_IMAGE = "/dummy%20imgs/home%20page/programs-image-1.jpg.svg";
-const FALLBACK_NEWS_IMAGES = [
-  "/dummy%20imgs/home%20page/features-image-1.jpg.svg",
-  "/dummy%20imgs/home%20page/image%2066.svg",
-];
-
 export type HomeHeroView = {
   backgrounds: string[];
   title: string;
@@ -158,13 +151,6 @@ export function toHomeHeroView(
   const t = dictionary.home;
   const hero = home?.hero;
   const backgrounds = toImageList(hero?.background_url);
-  const fallbackStats = [
-    { id: "heritage", label: t.stats.heritage, value: 100, moreThan: t.moreThan },
-    { id: "news", label: t.stats.news, value: 500, moreThan: t.moreThan },
-    { id: "events", label: t.stats.events, value: 150, moreThan: t.moreThan },
-    { id: "members", label: t.stats.members, value: 1250, moreThan: t.moreThan },
-  ];
-
   return {
     backgrounds: backgrounds.length > 0 ? backgrounds : [...FALLBACK_HERO_BACKGROUNDS],
     title: pickLocalized(locale, hero?.title_ar, hero?.title_en, t.title),
@@ -202,7 +188,7 @@ export function toHomeHeroView(
               moreThan: hasMoreThanPrefix(raw) ? t.moreThan : "",
             };
           })
-        : fallbackStats,
+        : [],
   };
 }
 
@@ -216,9 +202,9 @@ export function toAboutTeaserView(
   return {
     eyebrow: pickLocalized(locale, teaser?.eyebrow_ar, teaser?.eyebrow_en, t.eyebrow),
     title: pickLocalized(locale, teaser?.title_ar, teaser?.title_en, t.title),
-    body: pickLocalized(locale, teaser?.body_ar, teaser?.body_en, t.body),
-    email: teaser?.email || t.email,
-    phone: teaser?.phone || t.phone,
+    body: pickLocalized(locale, teaser?.body_ar, teaser?.body_en),
+    email: teaser?.email || "",
+    phone: teaser?.phone || "",
     cta: pickLocalized(
       locale,
       teaser?.button?.label_ar,
@@ -241,23 +227,16 @@ export function toServicesView(
   const t = dictionary.home.servicesSection;
   const services = home?.services;
   const cards =
-    services?.items && services.items.length > 0
-      ? services.items.map((item) => ({
-          id: item.id,
-          title: pickLocalized(locale, item.title_ar, item.title_en),
-          description: pickLocalized(
-            locale,
-            item.description_ar,
-            item.description_en,
-          ),
-          imageUrl: item.image_url || FALLBACK_SERVICE_IMAGE,
-        }))
-      : t.cards.map((card, index) => ({
-          id: index,
-          title: card.title,
-          description: card.description,
-          imageUrl: FALLBACK_SERVICE_IMAGE,
-        }));
+    services?.items?.map((item) => ({
+      id: item.id,
+      title: pickLocalized(locale, item.title_ar, item.title_en),
+      description: pickLocalized(
+        locale,
+        item.description_ar,
+        item.description_en,
+      ),
+      imageUrl: resolveCmsImage(item.image_url, ""),
+    })) ?? [];
 
   return {
     eyebrow: pickLocalized(
@@ -307,10 +286,7 @@ export function toEventsView(
         item.location_ar ?? item.address_ar,
         item.location_en ?? item.address_en,
       ),
-    imageUrl: resolveCmsImage(
-      item.image_url || item.icon,
-      FALLBACK_EVENT_IMAGE,
-    ),
+    imageUrl: resolveCmsImage(item.image_url || item.icon, ""),
   }));
 
   return {
@@ -351,7 +327,7 @@ export function toNewsView(
         : null;
 
   const cards: NewsCardView[] = source
-    ? source.map((item, index) => ({
+    ? source.map((item) => ({
         id: item.id,
         title: pickLocalized(locale, item.title_ar, item.title_en),
         description: pickLocalized(
@@ -359,15 +335,9 @@ export function toNewsView(
           item.description_ar ?? item.body_ar,
           item.description_en ?? item.body_en,
         ),
-        imageUrl:
-          item.image_url || FALLBACK_NEWS_IMAGES[index % FALLBACK_NEWS_IMAGES.length],
+        imageUrl: resolveCmsImage(item.image_url, ""),
       }))
-    : t.cards.map((card, index) => ({
-        id: index,
-        title: card.title,
-        description: card.description,
-        imageUrl: FALLBACK_NEWS_IMAGES[index % FALLBACK_NEWS_IMAGES.length],
-      }));
+    : [];
 
   return {
     eyebrow: pickLocalized(locale, section?.eyebrow_ar, section?.eyebrow_en, t.title),
@@ -397,7 +367,10 @@ export function toJoinView(
       join?.description_en,
       t.description,
     ),
-    imageUrl: join?.image_url || "/backgrounds/contact-us-section-bg.svg",
+    imageUrl: resolveCmsImage(
+      join?.image_url,
+      "/backgrounds/contact-us-section-bg.svg",
+    ),
   };
 }
 
@@ -428,7 +401,7 @@ export function toLineageView(
   return {
     eyebrow: pickLocalized(locale, lineage?.eyebrow_ar, lineage?.eyebrow_en, t.eyebrow),
     title: pickLocalized(locale, lineage?.title_ar, lineage?.title_en, t.title),
-    paragraphs: body ? splitParagraphs(body) : t.body,
+    paragraphs: body ? splitParagraphs(body) : [],
   };
 }
 
@@ -444,7 +417,7 @@ export function toGoalsView(
       ? aims.features.map((feature) =>
           pickLocalized(locale, feature.text_ar, feature.text_en),
         )
-      : t.points;
+      : [];
 
   return {
     eyebrow: pickLocalized(locale, aims?.eyebrow_ar, aims?.eyebrow_en, t.title),
@@ -466,13 +439,6 @@ export function toQuickStatsView(
 } {
   const t = dictionary.about.statsSection;
   const section = about?.quick_stats;
-  const fallback: QuickStatView[] = [
-    { id: "total", value: 3000, label: t.stats.total, suffix: "+" },
-    { id: "males", value: 780, label: t.stats.males, suffix: "+" },
-    { id: "females", value: 500, label: t.stats.females, suffix: "+" },
-    { id: "endowments", value: 100, label: t.stats.endowments, suffix: "+" },
-  ];
-
   const items =
     section?.items && section.items.length > 0
       ? section.items.map((item) => {
@@ -484,7 +450,7 @@ export function toQuickStatsView(
             suffix: hasPlusSuffix(raw) || hasMoreThanPrefix(raw) ? "+" : "",
           };
         })
-      : fallback;
+      : [];
 
   return {
     eyebrow: pickLocalized(
@@ -518,11 +484,7 @@ export function toFaqView(
           question: pickLocalized(locale, item.question_ar, item.question_en),
           answer: pickLocalized(locale, item.answer_ar, item.answer_en),
         }))
-      : t.items.map((item, index) => ({
-          id: index,
-          question: item.question,
-          answer: item.answer,
-        }));
+      : [];
 
   return {
     title: pickLocalized(locale, faq?.title_ar, faq?.title_en, t.title),
@@ -557,13 +519,12 @@ export function toContactInfoView(
       contact?.intro_en,
       t.infoSection.description,
     ),
-    email: contact?.cards?.email || t.infoSection.email,
-    phone: contact?.cards?.phone || t.infoSection.phone,
+    email: contact?.cards?.email || "",
+    phone: contact?.cards?.phone || "",
     address: pickLocalized(
       locale,
       contact?.cards?.address_ar,
       contact?.cards?.address_en,
-      t.infoSection.address,
     ),
   };
 }
@@ -593,9 +554,7 @@ export function toContactFormView(
       contact?.form?.intro_en,
       t.description,
     ),
-    mapEmbedUrl:
-      contact?.map_embed_url ||
-      "https://maps.google.com/maps?q=95+Nasser+Bin+Hawan+St,+Al+Rabwah,+Hafar+Al-Batin&hl=ar&z=15&output=embed",
+    mapEmbedUrl: contact?.map_embed_url || "",
     submitEndpoint: contact?.form?.submit_endpoint ?? null,
     messageTypes: types,
   };
@@ -646,9 +605,9 @@ export function toFooterView(
       t.newsletterDesc,
     ),
     newsletterEndpoint: footer?.newsletter?.subscribe_endpoint ?? null,
-    address: pickLocalized(locale, footer?.address_ar, footer?.address_en, t.address),
-    email: footer?.email || t.email,
-    phone: footer?.phone || t.phone,
+    address: pickLocalized(locale, footer?.address_ar, footer?.address_en),
+    email: footer?.email || "",
+    phone: footer?.phone || "",
     copyright: pickLocalized(
       locale,
       footer?.copyright_ar,

@@ -25,6 +25,7 @@ export type DummyAchievement = {
   branch: string;
   branchEn: string;
   images: string[];
+  fileUrl?: string | null;
 };
 
 const BOOK_1 =

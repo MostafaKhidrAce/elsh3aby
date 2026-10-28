@@ -14,7 +14,7 @@ import {
   Globe2,
   KeyRound,
   Landmark,
-  RefreshCw,
+  Share2,
   Trash2,
   UserRound,
   type LucideProps,
@@ -35,7 +35,6 @@ import {
 import { toApiPhone } from "@/lib/api/localized";
 import {
   getSubscriptions,
-  hasLiveActivePackage,
   subscribeToPackage,
   type SubscriptionPackage,
 } from "@/lib/api/subscriptions";
@@ -79,7 +78,6 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
   const [banks, setBanks] = useState<FamilyBankAccount[]>([]);
   const [packages, setPackages] = useState<SubscriptionPackage[]>([]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [packageActive, setPackageActive] = useState(false);
   const [nationalId, setNationalId] = useState("");
   const [familyBranch, setFamilyBranch] = useState("");
   const [email, setEmail] = useState("");
@@ -99,8 +97,9 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
   const [mobileTakenOpen, setMobileTakenOpen] = useState(false);
   const [mobileSuccessOpen, setMobileSuccessOpen] = useState(false);
   const [passwordSuccessOpen, setPasswordSuccessOpen] = useState(false);
-  const [unpaidOpen, setUnpaidOpen] = useState(false);
   const [error, setError] = useState("");
+  const [hiddenBanks, setHiddenBanks] = useState<Set<string>>(new Set());
+  const [copiedBankId, setCopiedBankId] = useState<string | null>(null);
 
   const tabs: {
     id: TabId;
@@ -144,8 +143,7 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
       getProfile(locale, token),
       getBankAccounts(locale, token),
       getSubscriptions(locale, token),
-      hasLiveActivePackage(locale, token),
-    ]).then(([profile, accounts, pkgs, active]) => {
+    ]).then(([profile, accounts, pkgs]) => {
       setFullName(profile.name);
       setMobile(profile.phone);
       setInitialMobile(profile.phone);
@@ -157,7 +155,6 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
       if (profile.image) setPhotoPreview(profile.image);
       setBanks(accounts);
       setPackages(pkgs);
-      setPackageActive(active);
     });
   }, [isReady, token, locale]);
 
@@ -230,7 +227,6 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
     if (!token) return;
     try {
       await subscribeToPackage(packageId, locale, token);
-      setUnpaidOpen(false);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
     }
@@ -264,9 +260,6 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
                   key={item.id}
                   type="button"
                   onClick={() => {
-                    if (item.id === "banks" && !packageActive) {
-                      setUnpaidOpen(true);
-                    }
                     setTab(item.id);
                     setError("");
                   }}
@@ -649,6 +642,43 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
                 const accountType = isAr
                   ? account.accountType
                   : account.accountTypeEn;
+                const revealed = !hiddenBanks.has(account.id);
+                const number = account.accountNumber;
+                const masked =
+                  number.length > 8
+                    ? `${number.slice(0, 4)}${"•".repeat(Math.max(6, number.length - 8))}${number.slice(-4)}`
+                    : number;
+                const displayNumber = revealed ? number : masked;
+
+                async function copyNumber() {
+                  try {
+                    await navigator.clipboard.writeText(number);
+                    setCopiedBankId(account.id);
+                    window.setTimeout(() => setCopiedBankId(null), 1500);
+                  } catch {
+                    // Clipboard can be blocked in some browsers.
+                  }
+                }
+
+                async function shareAccount() {
+                  const text = `${bankName}\n${number}`;
+                  try {
+                    if (navigator.share) {
+                      await navigator.share({ title: bankName, text });
+                      return;
+                    }
+                  } catch {
+                    // User cancelled share.
+                  }
+                  try {
+                    await navigator.clipboard.writeText(text);
+                    setCopiedBankId(account.id);
+                    window.setTimeout(() => setCopiedBankId(null), 1500);
+                  } catch {
+                    // Clipboard can be blocked in some browsers.
+                  }
+                }
+
                 return (
                   <article
                     key={account.id}
@@ -656,49 +686,78 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-3">
-                        <span
-                          className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                          style={{ backgroundColor: account.color }}
-                        >
-                          {account.initial}
-                        </span>
+                        {account.logoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={account.logoUrl}
+                            alt=""
+                            className="h-12 w-12 shrink-0 rounded-full bg-white object-contain"
+                          />
+                        ) : (
+                          <span
+                            className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
+                            style={{ backgroundColor: account.color }}
+                          >
+                            {account.initial}
+                          </span>
+                        )}
                         <div className="min-w-0">
                           <p className="truncate text-sm font-bold text-[#170F49]">
                             {bankName}
                           </p>
-                          <p className="mt-1 font-mono text-xs text-[#6B6B7B] sm:text-sm">
-                            {account.maskedNumber}
+                          <p
+                            dir="ltr"
+                            className="mt-1 break-all text-start font-mono text-xs text-[#6B6B7B] sm:text-sm"
+                          >
+                            {displayNumber}
                           </p>
                         </div>
                       </div>
-                      <span className="shrink-0 rounded-md bg-[#F4E8C0] px-2 py-1 text-[11px] font-semibold text-[#D5AF34]">
-                        {accountType}
-                      </span>
+                      {accountType ? (
+                        <span className="shrink-0 rounded-md bg-[#F4E8C0] px-2 py-1 text-[11px] font-semibold text-[#D5AF34]">
+                          {accountType}
+                        </span>
+                      ) : null}
                     </div>
                     <div className="mt-4 flex items-center justify-end gap-2">
                       <button
                         type="button"
-                        aria-label={t.show}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F5F5] text-[#6B6B7B]"
+                        aria-label={revealed ? t.hide : t.show}
+                        onClick={() => {
+                          setHiddenBanks((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(account.id)) next.delete(account.id);
+                            else next.add(account.id);
+                            return next;
+                          });
+                        }}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F5F5] text-[#6B6B7B] transition hover:bg-[#EEE7DA]"
                       >
-                        <Eye className="h-3.5 w-3.5" />
+                        {revealed ? (
+                          <EyeOff className="h-3.5 w-3.5" />
+                        ) : (
+                          <Eye className="h-3.5 w-3.5" />
+                        )}
                       </button>
                       <button
                         type="button"
-                        aria-label={t.refresh}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F5F5] text-[#6B6B7B]"
+                        aria-label={t.share}
+                        onClick={() => void shareAccount()}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F5F5] text-[#6B6B7B] transition hover:bg-[#EEE7DA]"
                       >
-                        <RefreshCw className="h-3.5 w-3.5" />
+                        <Share2 className="h-3.5 w-3.5" />
                       </button>
                       <button
                         type="button"
-                        aria-label={t.copy}
-                        onClick={() =>
-                          navigator.clipboard?.writeText(account.maskedNumber)
-                        }
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F5F5] text-[#6B6B7B]"
+                        aria-label={copiedBankId === account.id ? t.copied : t.copy}
+                        onClick={() => void copyNumber()}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#F5F5F5] text-[#6B6B7B] transition hover:bg-[#EEE7DA]"
                       >
-                        <Copy className="h-3.5 w-3.5" />
+                        {copiedBankId === account.id ? (
+                          <Check className="h-3.5 w-3.5 text-[#1B5E20]" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
                       </button>
                     </div>
                   </article>
@@ -840,21 +899,6 @@ export function ProfilePage({ locale, dictionary }: ProfilePageProps) {
         />
       ) : null}
 
-      {unpaidOpen ? (
-        <BookingConfirmModal
-          locale={locale}
-          title={t.unpaidTitle}
-          description={t.unpaidDescription}
-          icon={cancelIcon}
-          primaryLabel={t.goToPackages}
-          secondaryLabel={t.cancel}
-          onPrimary={() => {
-            setUnpaidOpen(false);
-            setTab("packages");
-          }}
-          onSecondary={() => setUnpaidOpen(false)}
-        />
-      ) : null}
     </>
   );
 }

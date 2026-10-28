@@ -9,6 +9,7 @@ import { NewsSection } from "@/components/home/NewsSection";
 import { ServicesSection } from "@/components/home/ServicesSection";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import { WebsitePageLoading } from "@/components/layout/WebsitePageLoading";
 import { getWebsiteHome } from "@/lib/api/website";
 import type { WebsiteHomeData } from "@/lib/api/website";
 import {
@@ -27,18 +28,27 @@ type HomePageClientProps = {
 
 export function HomePageClient({ locale, dictionary }: HomePageClientProps) {
   const [home, setHome] = useState<WebsiteHomeData | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
 
-    getWebsiteHome(locale).then((nextHome) => {
-      if (!cancelled) setHome(nextHome);
-    });
+    getWebsiteHome(locale)
+      .then((nextHome) => {
+        if (!cancelled) setHome(nextHome);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
 
     return () => {
       cancelled = true;
     };
   }, [locale]);
+
+  if (!loaded) {
+    return <WebsitePageLoading label={dictionary.common.loading} />;
+  }
 
   const hero = toHomeHeroView(locale, dictionary, home);
   const about = toAboutTeaserView(locale, dictionary, home);

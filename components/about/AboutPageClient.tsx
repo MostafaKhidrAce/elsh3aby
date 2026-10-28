@@ -8,6 +8,7 @@ import { AboutStatsSection } from "@/components/about/AboutStatsSection";
 import { SecondaryHero } from "@/components/about/SecondaryHero";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import { WebsitePageLoading } from "@/components/layout/WebsitePageLoading";
 import { getWebsiteAbout } from "@/lib/api/website";
 import type { WebsiteAboutData } from "@/lib/api/website";
 import {
@@ -25,16 +26,25 @@ type AboutPageClientProps = {
 
 export function AboutPageClient({ locale, dictionary }: AboutPageClientProps) {
   const [about, setAbout] = useState<WebsiteAboutData | null>(null);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    getWebsiteAbout(locale).then((nextAbout) => {
-      if (!cancelled) setAbout(nextAbout);
-    });
+    getWebsiteAbout(locale)
+      .then((nextAbout) => {
+        if (!cancelled) setAbout(nextAbout);
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
   }, [locale]);
+
+  if (!loaded) {
+    return <WebsitePageLoading label={dictionary.common.loading} />;
+  }
 
   const hero = toAboutHeroView(locale, dictionary, about);
   const lineage = toLineageView(locale, dictionary, about);

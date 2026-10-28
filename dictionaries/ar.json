@@ -623,6 +623,8 @@
       "show": "إظهار",
       "hide": "إخفاء",
       "copy": "نسخ",
+      "copied": "تم النسخ",
+      "share": "مشاركة",
       "refresh": "تحديث"
     },
     "achievementsPage": {
@@ -637,7 +639,7 @@
       "filterCommunal": "طائفي",
       "filterReligious": "ديني",
       "writtenBy": "تم النشر بواسطة",
-      "downloadFile": "تحميل الملف",
+      "downloadFile": "التحميل",
       "emptyTitle": "لا توجد منجزات",
       "emptyDescription": "لا توجد نتائج مطابقة للبحث.",
       "back": "رجوع"

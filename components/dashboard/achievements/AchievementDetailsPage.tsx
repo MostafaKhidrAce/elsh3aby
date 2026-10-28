@@ -6,6 +6,8 @@ import Link from "next/link";
 import { ArrowRight, BookOpen, Download, Star } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
+import { EventImageSlider } from "@/components/dashboard/events/EventImageSlider";
+import { AchievementGalleryModal } from "@/components/dashboard/achievements/AchievementGalleryModal";
 import type { DummyAchievement } from "@/lib/dashboard/dummy-achievements";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -28,7 +30,7 @@ export function AchievementDetailsPage({
 }: AchievementDetailsPageProps) {
   const t = dictionary.dashboard.achievementsPage;
   const isAr = locale === "ar";
-  const [imageIndex, setImageIndex] = useState(0);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const title = isAr ? item.title : item.titleEn;
   const description = isAr ? item.description : item.descriptionEn;
@@ -36,9 +38,20 @@ export function AchievementDetailsPage({
   const author = isAr ? item.author : item.authorEn;
   const authorImage = item.authorImage || PLACEHOLDER_AVATAR;
   const listHref = `/${locale}/dashboard/achievements`;
-  const images = item.images.length > 0 ? item.images : [""];
+  const images = item.images.filter(Boolean);
+
+  function handleDownload() {
+    if (item.fileUrl && images.length <= 1) {
+      window.open(item.fileUrl, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (images.length > 0) {
+      setGalleryOpen(true);
+    }
+  }
 
   return (
+    <>
     <div className="space-y-4 sm:space-y-5">
       <header
         className={`${cardClass} flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between`}
@@ -73,30 +86,7 @@ export function AchievementDetailsPage({
       </header>
 
       <section className={`${cardClass} space-y-5`}>
-        <div className="overflow-hidden rounded-[18px] bg-[#F5F5F5]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={images[imageIndex]}
-            alt=""
-            className="aspect-[16/9] w-full object-cover"
-          />
-        </div>
-
-        {images.length > 1 ? (
-          <div className="flex items-center justify-center gap-2">
-            {images.map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                aria-label={`Image ${index + 1}`}
-                onClick={() => setImageIndex(index)}
-                className={`h-2.5 w-2.5 rounded-full transition ${
-                  index === imageIndex ? "bg-[#D5AF34]" : "bg-[#D9D9D9]"
-                }`}
-              />
-            ))}
-          </div>
-        ) : null}
+        <EventImageSlider images={images} locale={locale} alt={title} />
 
         <div className="space-y-3 text-start">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-[#FBF6E6] px-3 py-1 text-xs font-bold text-[#D5AF34]">
@@ -125,7 +115,7 @@ export function AchievementDetailsPage({
         <div className="flex justify-center pt-2">
           <button
             type="button"
-            onClick={() => console.log("download achievement", item.id)}
+            onClick={handleDownload}
             className="inline-flex min-w-[220px] items-center justify-center gap-2 rounded-[12px] bg-[#D5AF34] px-8 py-3.5 text-base font-bold text-white transition hover:brightness-95"
           >
             <Download className="h-5 w-5" strokeWidth={2} />
@@ -134,5 +124,13 @@ export function AchievementDetailsPage({
         </div>
       </section>
     </div>
+    <AchievementGalleryModal
+      open={galleryOpen}
+      locale={locale}
+      title={t.downloadFile}
+      images={images}
+      onClose={() => setGalleryOpen(false)}
+    />
+    </>
   );
 }

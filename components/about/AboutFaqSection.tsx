@@ -14,6 +14,8 @@ const ACTIVE_TITLE = "#FCB900";
 export function AboutFaqSection({ data }: AboutFaqSectionProps) {
   const [openIndex, setOpenIndex] = useState(0);
 
+  if (data.items.length === 0) return null;
+
   const rightColumn = data.items
     .map((item, index) => ({ item, index }))
     .filter(({ index }) => index % 2 === 0);

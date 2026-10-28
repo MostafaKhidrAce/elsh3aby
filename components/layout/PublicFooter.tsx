@@ -52,9 +52,7 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
     "idle",
   );
-  const [data, setData] = useState<FooterView>(() =>
-    toFooterView(locale, dictionary, null),
-  );
+  const [data, setData] = useState<FooterView | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +63,8 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
       cancelled = true;
     };
   }, [locale, dictionary]);
+
+  if (!data) return null;
 
   const socialItems = [
     data.social.snapchat
@@ -255,6 +255,7 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
               <h3 className="text-[16px] font-bold sm:text-[18px] lg:text-[20px]">
                 {t.addressTitle}
               </h3>
+              {data.address ? (
               <div className="mt-3 flex items-start gap-3 sm:mt-4">
                 <span className="mt-0.5 inline-flex shrink-0 text-white">
                   <MapPin className="h-5 w-5" strokeWidth={1.75} />
@@ -263,6 +264,7 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
                   {data.address}
                 </p>
               </div>
+              ) : null}
               {socialItems.length > 0 ? (
                 <>
                   <div className="mt-5 h-px w-full bg-white/30" />
@@ -300,6 +302,7 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
                 {t.contactTitle}
               </h3>
               <div className="mt-4 flex flex-col gap-5">
+                {data.phone ? (
                 <div className="flex items-start gap-3">
                   <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/80">
                     <Phone className="h-4 w-4" strokeWidth={1.75} />
@@ -315,6 +318,8 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
                     </a>
                   </div>
                 </div>
+                ) : null}
+                {data.email ? (
                 <div className="flex items-start gap-3">
                   <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/80">
                     <Mail className="h-4 w-4" strokeWidth={1.75} />
@@ -329,6 +334,7 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
                     </a>
                   </div>
                 </div>
+                ) : null}
               </div>
             </div>
           </div>

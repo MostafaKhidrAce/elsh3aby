@@ -115,13 +115,16 @@ export function formatEventDate(value?: string | null): string {
 
 export function resolveCmsImage(url: string | null | undefined, fallback: string): string {
   if (!url?.trim()) return fallback;
+  const trimmed = url.trim();
+  if (trimmed.includes("dummy") || trimmed.includes("dummy%20")) return fallback;
+  if (trimmed.startsWith("/")) return trimmed;
   try {
-    const host = new URL(url).hostname;
+    const host = new URL(trimmed).hostname;
     if (host === "127.0.0.1" || host === "localhost") return fallback;
   } catch {
     return fallback;
   }
-  return url;
+  return trimmed;
 }
 
 const STORAGE_ORIGIN = (

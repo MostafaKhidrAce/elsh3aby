@@ -33,6 +33,7 @@ type ApiBook = {
   cover_image_url?: string | null;
   image_url?: string | null;
   gallery?: unknown;
+  book_file_url?: string | null;
   published_date?: string | null;
   created_at?: string | null;
   category_id?: number | null;
@@ -75,6 +76,7 @@ export function toAchievement(item: ApiBook, _locale: Locale): DummyAchievement 
     branch: branch.ar,
     branchEn: branch.en,
     images: images.length ? images : [FALLBACK],
+    fileUrl: item.book_file_url || null,
   };
 }
 

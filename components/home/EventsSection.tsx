@@ -92,14 +92,16 @@ export function EventsSection({
                 index < events.length - 1 ? "border-b border-white/15" : ""
               }`}
             >
-              <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[10px] sm:w-[200px] lg:w-[240px]">
-                <Image
-                  src={event.imageUrl}
-                  alt={event.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, 240px"
-                />
+              <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[10px] bg-white/10 sm:w-[200px] lg:w-[240px]">
+                {event.imageUrl ? (
+                  <Image
+                    src={event.imageUrl}
+                    alt={event.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, 240px"
+                  />
+                ) : null}
               </div>
 
               <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5 px-1 py-1 sm:gap-3 sm:px-3 sm:py-3">

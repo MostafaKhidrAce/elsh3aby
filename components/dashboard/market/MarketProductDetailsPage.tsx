@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight, ShoppingCart, Store } from "lucide-react";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { EventsBreadcrumbs } from "@/components/dashboard/events/EventsBreadcrumbs";
+import { EventImageSlider } from "@/components/dashboard/events/EventImageSlider";
 import type { MarketProduct } from "@/lib/dashboard/dummy-market";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -25,7 +25,6 @@ export function MarketProductDetailsPage({
 }: MarketProductDetailsPageProps) {
   const t = dictionary.dashboard.marketPage;
   const isAr = locale === "ar";
-  const [imageIndex, setImageIndex] = useState(0);
 
   const title = isAr ? product.title : product.titleEn;
   const description = isAr ? product.description : product.descriptionEn;
@@ -69,30 +68,7 @@ export function MarketProductDetailsPage({
       </header>
 
       <section className={`${cardClass} space-y-5`}>
-        <div className="overflow-hidden rounded-[18px] bg-[#F5F5F5]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={images[imageIndex]}
-            alt=""
-            className="aspect-[16/9] w-full object-cover"
-          />
-        </div>
-
-        {images.length > 1 ? (
-          <div className="flex items-center justify-center gap-2">
-            {images.map((_, index) => (
-              <button
-                key={index}
-                type="button"
-                aria-label={`Image ${index + 1}`}
-                onClick={() => setImageIndex(index)}
-                className={`h-2.5 w-2.5 rounded-full transition ${
-                  index === imageIndex ? "bg-[#D5AF34]" : "bg-[#D9D9D9]"
-                }`}
-              />
-            ))}
-          </div>
-        ) : null}
+        <EventImageSlider images={images} locale={locale} alt={title} />
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 space-y-3">

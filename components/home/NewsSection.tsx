@@ -154,13 +154,17 @@ export function NewsSection({
                 key={card.id}
                 className="relative min-h-[340px] overflow-hidden rounded-[20px] sm:min-h-[400px] lg:min-h-[520px] xl:min-h-[560px]"
               >
-                <Image
-                  src={card.imageUrl}
-                  alt={card.title}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
+                {card.imageUrl ? (
+                  <Image
+                    src={card.imageUrl}
+                    alt={card.title}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-[#EDE4D6]" aria-hidden />
+                )}
 
                 <div className="absolute inset-x-3 bottom-4 sm:inset-x-4 sm:bottom-6 lg:inset-x-5 lg:bottom-8">
                   <button

@@ -623,6 +623,8 @@
       "show": "Show",
       "hide": "Hide",
       "copy": "Copy",
+      "copied": "Copied",
+      "share": "Share",
       "refresh": "Refresh"
     },
     "achievementsPage": {
@@ -637,7 +639,7 @@
       "filterCommunal": "Communal",
       "filterReligious": "Religious",
       "writtenBy": "Published by",
-      "downloadFile": "Download file",
+      "downloadFile": "Download",
       "emptyTitle": "No achievements",
       "emptyDescription": "No results match your search.",
       "back": "Back"

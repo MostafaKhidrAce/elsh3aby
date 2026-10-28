@@ -66,14 +66,16 @@ export function ServicesSection({
           <div className="mt-8 grid grid-cols-1 gap-5 sm:mt-10 sm:grid-cols-2 sm:gap-6 lg:mt-12 lg:grid-cols-3 lg:gap-8">
             {cards.map((card) => (
               <article key={card.id} className="flex flex-col">
-                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px]">
-                  <Image
-                    src={card.imageUrl}
-                    alt={card.title}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-[#EDE4D6]">
+                  {card.imageUrl ? (
+                    <Image
+                      src={card.imageUrl}
+                      alt={card.title}
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  ) : null}
                 </div>
 
                 <h3

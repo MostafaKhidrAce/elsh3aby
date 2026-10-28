@@ -47,6 +47,7 @@ export function ContactInfoSection({
       dir={isAr ? "rtl" : "ltr"}
       className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5"
     >
+      {data.phone ? (
       <article className="rounded-[14px] border border-[#E5E5E5] bg-white p-5 sm:p-6">
         <div className="flex items-center gap-3">
           <span
@@ -67,7 +68,9 @@ export function ContactInfoSection({
           </div>
         </div>
       </article>
+      ) : null}
 
+      {data.email ? (
       <article className="rounded-[14px] border border-[#E5E5E5] bg-white p-5 sm:p-6">
         <div className="flex items-center gap-3">
           <span
@@ -87,7 +90,9 @@ export function ContactInfoSection({
           </div>
         </div>
       </article>
+      ) : null}
 
+      {data.address ? (
       <article className="rounded-[14px] border border-[#E5E5E5] bg-white p-5 sm:col-span-2 sm:p-6">
         <div className="flex items-center gap-3">
           <span
@@ -104,6 +109,7 @@ export function ContactInfoSection({
           </div>
         </div>
       </article>
+      ) : null}
     </div>
   );
 

@@ -185,7 +185,7 @@ export function ContactFormSection({
     }
   }
 
-  const mapBlock = (
+  const mapBlock = data.mapEmbedUrl ? (
     <div className="relative aspect-[4/3] w-full min-h-[220px] overflow-hidden rounded-[16px] sm:aspect-auto sm:min-h-[300px] sm:rounded-[20px] lg:min-h-full lg:h-full">
       <iframe
         title={t.mapTitle}
@@ -196,7 +196,7 @@ export function ContactFormSection({
         allowFullScreen
       />
     </div>
-  );
+  ) : null;
 
   const formBlock = (
     <div
@@ -350,7 +350,9 @@ export function ContactFormSection({
     >
       <div
         dir="ltr"
-        className="mx-auto grid w-full max-w-7xl grid-cols-1 items-stretch gap-4 sm:gap-6 xl:max-w-[1400px] lg:grid-cols-2 lg:gap-10 xl:gap-14"
+        className={`mx-auto grid w-full max-w-7xl grid-cols-1 items-stretch gap-4 sm:gap-6 xl:max-w-[1400px] ${
+          data.mapEmbedUrl ? "lg:grid-cols-2 lg:gap-10 xl:gap-14" : ""
+        }`}
       >
         {isAr ? (
           <>

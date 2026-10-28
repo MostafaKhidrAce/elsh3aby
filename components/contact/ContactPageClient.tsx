@@ -6,6 +6,7 @@ import { ContactFormSection } from "@/components/contact/ContactFormSection";
 import { ContactInfoSection } from "@/components/contact/ContactInfoSection";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
+import { WebsitePageLoading } from "@/components/layout/WebsitePageLoading";
 import { getMessageTypes, getWebsiteContact } from "@/lib/api/website";
 import type { MessageType, WebsiteContactData } from "@/lib/api/website";
 import { toContactFormView, toContactInfoView } from "@/lib/api/website-view";
@@ -18,20 +19,27 @@ type ContactPageClientProps = {
 export function ContactPageClient({ locale, dictionary }: ContactPageClientProps) {
   const [contact, setContact] = useState<WebsiteContactData | null>(null);
   const [messageTypes, setMessageTypes] = useState<MessageType[]>([]);
+  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getWebsiteContact(locale), getMessageTypes(locale)]).then(
-      ([nextContact, nextTypes]) => {
+    Promise.all([getWebsiteContact(locale), getMessageTypes(locale)])
+      .then(([nextContact, nextTypes]) => {
         if (cancelled) return;
         setContact(nextContact);
         setMessageTypes(nextTypes);
-      },
-    );
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
   }, [locale]);
+
+  if (!loaded) {
+    return <WebsitePageLoading label={dictionary.common.loading} />;
+  }
 
   const t = dictionary.contact;
   const info = toContactInfoView(locale, dictionary, contact);
