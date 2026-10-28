@@ -7,6 +7,7 @@ export type NamedType = {
   name_en?: string | null;
   name?: string | null;
   icon?: string | null;
+  price?: string | number | null;
 };
 
 export function asList<T>(value: unknown): T[] {
@@ -33,6 +34,9 @@ export function asList<T>(value: unknown): T[] {
       "bank_accounts",
       "banks",
       "subscriptions",
+      "booking_slots",
+      "available_dates",
+      "dates",
     ]) {
       if (Array.isArray(record[key])) return record[key] as T[];
     }

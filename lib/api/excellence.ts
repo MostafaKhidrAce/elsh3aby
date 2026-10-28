@@ -4,6 +4,12 @@ import { pairLocalized, pairNamed, pickLocalized, resolveMedia } from "@/lib/api
 import type { Locale } from "@/lib/i18n/config";
 import type { DummyExcellence, ExcellencePraise } from "@/lib/dashboard/dummy-excellence";
 
+export const EXCELLENCE_FALLBACK_IMAGE = "/logos/full-logo-dashboard.svg";
+
+export function isExcellencePhoto(src?: string | null): boolean {
+  return Boolean(src && !src.includes("/logos/"));
+}
+
 type Named = { id?: number; name_ar?: string | null; name_en?: string | null };
 
 type ApiExcellence = {
@@ -37,6 +43,18 @@ type ApiCommendation = {
   message?: string | null;
   commender_name?: string | null;
 };
+
+function excellenceImage(url?: string | null): string {
+  const resolved = resolveMedia(url, "");
+  if (
+    !resolved ||
+    resolved.includes("placeholder") ||
+    resolved.includes("dummy")
+  ) {
+    return EXCELLENCE_FALLBACK_IMAGE;
+  }
+  return resolved;
+}
 
 function ageGroup(value?: string | null): DummyExcellence["ageGroup"] {
   const raw = (value || "").toLowerCase();
@@ -74,7 +92,7 @@ export function toExcellence(item: ApiExcellence, locale: Locale): DummyExcellen
     year,
     bio: bio.ar,
     bioEn: bio.en,
-    image: resolveMedia(item.image_url || item.image),
+    image: excellenceImage(item.image_url || item.image),
     branchId: Number(item.family_branch_id ?? item.family_branch?.id ?? item.branch?.id) || undefined,
     branch: branch.ar,
     branchEn: branch.en,

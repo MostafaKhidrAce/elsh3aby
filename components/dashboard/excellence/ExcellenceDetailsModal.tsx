@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
+import { EXCELLENCE_FALLBACK_IMAGE, isExcellencePhoto } from "@/lib/api/excellence";
 import type { DummyExcellence } from "@/lib/dashboard/dummy-excellence";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -29,10 +30,15 @@ export function ExcellenceDetailsModal({
 }: ExcellenceDetailsModalProps) {
   const isAr = locale === "ar";
   const [mounted, setMounted] = useState(false);
+  const [broken, setBroken] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    setBroken(false);
+  }, [item?.id, item?.image]);
 
   useEffect(() => {
     if (!open) return;
@@ -54,6 +60,7 @@ export function ExcellenceDetailsModal({
   const title = isAr ? item.title : item.titleEn;
   const bio = isAr ? item.bio : item.bioEn;
   const hasPraises = item.praises.length > 0;
+  const showPhoto = !broken && isExcellencePhoto(item.image);
 
   return createPortal(
     <div className="fixed inset-0 z-[210] flex items-center justify-center bg-[#1F2428]/65 p-4 backdrop-blur-md sm:p-6">
@@ -82,12 +89,18 @@ export function ExcellenceDetailsModal({
             </button>
           </div>
 
-          <div className="aspect-[16/10] w-full overflow-hidden rounded-[16px] bg-[#F5F5F5]">
+          <div className="flex aspect-[16/10] w-full items-center justify-center overflow-hidden rounded-[16px] bg-[#F6EFE7]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={item.image}
+              src={showPhoto ? item.image : EXCELLENCE_FALLBACK_IMAGE}
               alt=""
-              className="h-full w-full object-cover"
+              className={
+                showPhoto
+                  ? "h-full w-full object-cover"
+                  : "h-[72%] w-[72%] object-contain"
+              }
+              draggable={false}
+              onError={() => setBroken(true)}
             />
           </div>
         </div>

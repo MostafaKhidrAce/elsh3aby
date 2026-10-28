@@ -19,6 +19,7 @@ export type DummyVenueBooking = {
   status?: "pending" | "approved";
   canCancel?: boolean;
   dateKey?: string;
+  price?: number | null;
 };
 
 export type BookingStatusItem = {
@@ -38,6 +39,7 @@ export type BookingStatusItem = {
   bookedByEn: string;
   branch: string;
   branchEn: string;
+  price?: number | null;
 };
 
 const HALL_IMG =

@@ -717,6 +717,8 @@
         { "value": "last_year", "label": "العام الماضي" },
         { "value": "all_time", "label": "على مر العصور" }
       ],
+      "timeSlot": "التوقيت",
+      "timeSlotPlaceholder": "اختر التوقيت",
       "bookingPrice": "سعر الحجز",
       "currency": "﷼",
       "bookNow": "حجز الآن",

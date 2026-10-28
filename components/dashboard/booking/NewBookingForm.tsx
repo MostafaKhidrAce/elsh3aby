@@ -24,10 +24,10 @@ import { getBookingTypes } from "@/lib/api/catalog";
 import {
   checkBookingAvailability,
   createPlaceBooking,
+  parseBookingPrice,
 } from "@/lib/api/bookings";
 import { pickNamed, toApiPhone } from "@/lib/api/localized";
 import { useAuth } from "@/lib/auth/auth-context";
-import { BOOKING_PRICE } from "@/lib/dashboard/dummy-venue-bookings";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -58,14 +58,12 @@ function DropdownIndicator(props: DropdownIndicatorProps<Option, false>) {
   );
 }
 
-function formatDateLabel(dateKey: string | null, locale: Locale, months: string[]) {
-  if (!dateKey) return locale === "ar" ? "17 يوليو 2025" : "17 July 2025";
+function formatDateLabel(dateKey: string | null, months: string[]) {
+  if (!dateKey) return "";
   const [y, m, d] = dateKey.split("-").map(Number);
   if (!y || !m || !d) return dateKey;
   const monthName = months[m - 1] ?? "";
-  return locale === "ar"
-    ? `${d} ${monthName} ${y}`
-    : `${d} ${monthName} ${y}`;
+  return `${d} ${monthName} ${y}`;
 }
 
 export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
@@ -77,15 +75,19 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const dateKey = searchParams.get("date");
-  const timeFrom = searchParams.get("from") ?? "13:30";
-  const timeTo = searchParams.get("to") ?? "17:30";
+  const timeFrom = searchParams.get("from") || "";
+  const timeTo = searchParams.get("to") || "";
+  const typeParam = searchParams.get("type") || "";
+  const slotParam = searchParams.get("slot") || "";
+  const priceParam = parseBookingPrice(searchParams.get("price"));
 
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [typeOptions, setTypeOptions] = useState<Option[]>([]);
+  const [typePrices, setTypePrices] = useState<Record<string, number | null>>({});
   const [eventType, setEventType] = useState<Option | null>(null);
   const [attachment, setAttachment] = useState<File | null>(null);
   const [attendees, setAttendees] = useState("");
-  const [firstName, setFirstName] = useState(isAr ? "فيصل" : "Faisal");
+  const [firstName, setFirstName] = useState("");
   const [mobile, setMobile] = useState("");
   const [notes, setNotes] = useState("");
   const [fileName, setFileName] = useState("");
@@ -94,8 +96,10 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
   const [conflictOpen, setConflictOpen] = useState(false);
 
   const bookingHref = `/${locale}/dashboard/booking`;
-  const dateLabel = formatDateLabel(dateKey, locale, t.months);
-  const timeLabel = `${timeFrom} - ${timeTo}`;
+  const dateLabel = formatDateLabel(dateKey, t.months);
+  const timeLabel = [timeFrom, timeTo].filter(Boolean).join(" - ");
+  const bookingPrice =
+    priceParam ?? (eventType ? typePrices[eventType.value] ?? null : null);
 
   const selectStyles: StylesConfig<Option, false> = {
     control: (base, state) => ({
@@ -145,24 +149,46 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
   };
 
   useEffect(() => {
+    if (user?.name) setFirstName((current) => current || user.name);
+    if (user?.phone) setMobile((current) => current || user.phone || "");
+  }, [user]);
+
+  useEffect(() => {
     if (!token) return;
     void getBookingTypes(locale, token).then((items) => {
       const options = items.map((item) => ({
         value: String(item.id),
         label: pickNamed(locale, item),
       }));
+      const prices = Object.fromEntries(
+        items.map((item) => [String(item.id), parseBookingPrice(item.price)]),
+      );
       setTypeOptions(options);
-      setEventType((current) => current ?? options[0] ?? null);
+      setTypePrices(prices);
+      setEventType((current) => {
+        if (current) return current;
+        return options.find((option) => option.value === typeParam) ?? options[0] ?? null;
+      });
     });
-  }, [locale, token]);
+  }, [locale, token, typeParam]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!dateKey || !eventType || !firstName.trim() || !mobile.trim() || !token) {
+    if (
+      !dateKey ||
+      !eventType ||
+      !timeFrom ||
+      !timeTo ||
+      !firstName.trim() ||
+      !mobile.trim() ||
+      !token
+    ) {
       setError(dictionary.common.required);
       return;
     }
-    const available = await checkBookingAvailability(dateKey, locale, token);
+    const available = await checkBookingAvailability(dateKey, locale, token, {
+      booking_type_id: eventType.value,
+    });
     if (!available) {
       setConflictOpen(true);
       return;
@@ -178,6 +204,7 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
           date_to: dateKey,
           time_from: timeFrom,
           time_to: timeTo,
+          booking_slot_id: slotParam ? Number(slotParam) : undefined,
           attendees_count: Number(attendees) || undefined,
           additional_notes: notes.trim() || undefined,
           attachment,
@@ -227,21 +254,27 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
         <section className={cardClass}>
           <div className="mb-6 flex flex-col gap-3 rounded-[14px] bg-[#F5F5F5] px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-[#170F49]">
-              <span className="inline-flex items-center gap-1.5">
-                <CalendarDays className="h-4 w-4 text-[#D5AF34]" />
-                {dateLabel}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-[#D5AF34]" />
-                {timeLabel}
-              </span>
+              {dateLabel ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4 text-[#D5AF34]" />
+                  {dateLabel}
+                </span>
+              ) : null}
+              {timeLabel ? (
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock className="h-4 w-4 text-[#D5AF34]" />
+                  {timeLabel}
+                </span>
+              ) : null}
             </div>
-            <div className="inline-flex items-center gap-2 text-sm font-bold text-[#D5AF34]">
-              <Coins className="h-4 w-4" strokeWidth={2} />
-              <span>
-                {BOOKING_PRICE} {t.currency}
-              </span>
-            </div>
+            {bookingPrice != null ? (
+              <div className="inline-flex items-center gap-2 text-sm font-bold text-[#D5AF34]">
+                <Coins className="h-4 w-4" strokeWidth={2} />
+                <span>
+                  {bookingPrice} {t.currency}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-4">

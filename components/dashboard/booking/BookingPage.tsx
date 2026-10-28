@@ -20,11 +20,15 @@ import {
   cancelPlaceBooking,
   checkBookingAvailability,
   getAvailableBookingDates,
+  getBookingSlots,
   getBookingStatusItems,
+  parseBookingPrice,
   payPlaceBooking,
+  type BookingSlotView,
 } from "@/lib/api/bookings";
+import { getBookingTypes, type NamedType } from "@/lib/api/catalog";
+import { pickNamed } from "@/lib/api/localized";
 import { useAuth } from "@/lib/auth/auth-context";
-import { BOOKING_PRICE } from "@/lib/dashboard/dummy-venue-bookings";
 import type { BookingStatusItem } from "@/lib/dashboard/dummy-venue-bookings";
 import { toDateKey } from "@/lib/dashboard/dummy-events";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -73,40 +77,88 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
   const router = useRouter();
   const { ensureCanAdd } = useSubscriptionGate();
 
-  const [viewMonth, setViewMonth] = useState(() =>
-    startOfMonth(new Date(2026, 0, 1)),
-  );
+  const [viewMonth, setViewMonth] = useState(() => startOfMonth(new Date()));
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [preset, setPreset] = useState("last_week");
-  const [timeFrom, setTimeFrom] = useState("12:46");
-  const [timeTo, setTimeTo] = useState("18:30");
+  const [preset, setPreset] = useState("this_month");
+  const [timeFrom, setTimeFrom] = useState("");
+  const [timeTo, setTimeTo] = useState("");
   const [modal, setModal] = useState<ModalKind>(null);
   const [activeBookingId, setActiveBookingId] = useState<string | null>(null);
   const { token, isReady } = useAuth();
   const [statusItems, setStatusItems] = useState<BookingStatusItem[]>([]);
   const [busyDates, setBusyDates] = useState<Set<string>>(new Set());
+  const [bookingTypes, setBookingTypes] = useState<NamedType[]>([]);
+  const [bookingTypeId, setBookingTypeId] = useState("");
+  const [slots, setSlots] = useState<BookingSlotView[]>([]);
+  const [slotId, setSlotId] = useState("");
+
+  const selectedType = bookingTypes.find((item) => String(item.id) === bookingTypeId);
+  const selectedSlot = slots.find((item) => item.id === slotId);
+  const bookingPrice =
+    selectedSlot?.price ?? parseBookingPrice(selectedType?.price) ?? null;
+  const activeBooking = statusItems.find((item) => item.id === activeBookingId);
+  const activePrice = activeBooking?.price ?? null;
 
   useEffect(() => {
     if (!isReady || !token) return;
+    void getBookingTypes(locale, token).then((items) => {
+      setBookingTypes(items);
+      setBookingTypeId((current) => current || (items[0] ? String(items[0].id) : ""));
+    });
+    void getBookingStatusItems(locale, token).then(setStatusItems).catch(() => {
+      setStatusItems([]);
+    });
+  }, [isReady, token, locale]);
+
+  useEffect(() => {
+    if (!isReady || !token || !bookingTypeId) return;
     const start = toDateKey(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1));
     const end = toDateKey(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0));
-    void Promise.all([
-      getBookingStatusItems(locale, token),
-      getAvailableBookingDates(locale, token, { start_date: start, end_date: end }),
-    ]).then(([items, dates]) => {
-      setStatusItems(items);
+    void getAvailableBookingDates(locale, token, {
+      booking_type_id: bookingTypeId,
+      start_date: start,
+      end_date: end,
+    }).then((dates) => {
+      if (!dates) {
+        setBusyDates(new Set());
+        return;
+      }
       const available = new Set(dates);
-      if (available.size) {
-        const busy = new Set<string>();
-        const days = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
-        for (let day = 1; day <= days; day += 1) {
-          const key = toDateKey(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day));
-          if (!available.has(key)) busy.add(key);
-        }
-        setBusyDates(busy);
+      const busy = new Set<string>();
+      const days = new Date(viewMonth.getFullYear(), viewMonth.getMonth() + 1, 0).getDate();
+      for (let day = 1; day <= days; day += 1) {
+        const key = toDateKey(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day));
+        if (!available.has(key)) busy.add(key);
+      }
+      setBusyDates(busy);
+    });
+  }, [isReady, token, locale, viewMonth, bookingTypeId]);
+
+  useEffect(() => {
+    if (!isReady || !token || !bookingTypeId || !selectedDate) {
+      setSlots([]);
+      setSlotId("");
+      setTimeFrom("");
+      setTimeTo("");
+      return;
+    }
+    void getBookingSlots(locale, token, {
+      booking_type_id: bookingTypeId,
+      date: selectedDate,
+    }).then((items) => {
+      setSlots(items);
+      const first = items.find((item) => item.available) ?? items[0];
+      if (first) {
+        setSlotId(first.id);
+        setTimeFrom(first.from);
+        setTimeTo(first.to);
+      } else {
+        setSlotId("");
+        setTimeFrom("");
+        setTimeTo("");
       }
     });
-  }, [isReady, token, locale, viewMonth]);
+  }, [isReady, token, locale, bookingTypeId, selectedDate]);
 
   const cells = useMemo(() => buildMonthCells(viewMonth), [viewMonth]);
   const monthLabel = `${t.months[viewMonth.getMonth()]} ${viewMonth.getFullYear()}`;
@@ -118,6 +170,9 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
     if (selectedDate) params.set("date", selectedDate);
     if (timeFrom) params.set("from", timeFrom);
     if (timeTo) params.set("to", timeTo);
+    if (bookingTypeId) params.set("type", bookingTypeId);
+    if (slotId) params.set("slot", slotId);
+    if (bookingPrice != null) params.set("price", String(bookingPrice));
     const qs = params.toString();
     return qs ? `${newHrefBase}?${qs}` : newHrefBase;
   }
@@ -153,7 +208,9 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
     const allowed = await ensureCanAdd();
     if (!allowed) return;
     if (selectedDate && token) {
-      const available = await checkBookingAvailability(selectedDate, locale, token);
+      const available = await checkBookingAvailability(selectedDate, locale, token, {
+        booking_type_id: bookingTypeId || undefined,
+      });
       if (!available) {
         setModal("conflict");
         return;
@@ -236,9 +293,29 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-base font-bold text-[#170F49]">
-              {t.availableDays}
-            </h3>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <h3 className="text-base font-bold text-[#170F49]">
+                {t.availableDays}
+              </h3>
+              {bookingTypes.length ? (
+                <label className="flex min-w-[180px] flex-col gap-1.5">
+                  <span className="text-sm font-semibold text-[#170F49]">
+                    {t.eventType}
+                  </span>
+                  <select
+                    value={bookingTypeId}
+                    onChange={(event) => setBookingTypeId(event.target.value)}
+                    className="h-11 rounded-[10px] border border-[#E5E5E5] bg-white px-3 text-sm font-semibold text-[#170F49] outline-none focus:border-[#D5AF34]"
+                  >
+                    {bookingTypes.map((item) => (
+                      <option key={item.id} value={String(item.id)}>
+                        {pickNamed(locale, item)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
+            </div>
 
             <div className="grid gap-5 lg:grid-cols-[220px_minmax(0,1fr)]">
               <div className="order-2 flex flex-col gap-1 rounded-[16px] border border-[#EFEFEF] p-2 lg:order-1">
@@ -330,44 +407,78 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
 
             <div className="flex flex-col gap-4 border-t border-[#F0F0F0] pt-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="flex flex-wrap items-end gap-3">
-                <label className="flex min-w-[120px] flex-col gap-1.5">
-                  <span className="sr-only">From</span>
-                  <div className="relative">
-                    <Clock
-                      className="pointer-events-none absolute top-1/2 start-3 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]"
-                      strokeWidth={1.75}
-                    />
-                    <input
-                      type="time"
-                      value={timeFrom}
-                      onChange={(e) => setTimeFrom(e.target.value)}
-                      className="h-11 w-full rounded-[10px] border border-[#E5E5E5] bg-white pe-3 ps-10 text-sm font-semibold text-[#170F49] outline-none focus:border-[#D5AF34]"
-                    />
+                {slots.length ? (
+                  <label className="flex min-w-[180px] flex-col gap-1.5">
+                    <span className="text-sm font-semibold text-[#170F49]">
+                      {t.timeSlot}
+                    </span>
+                    <div className="relative">
+                      <Clock
+                        className="pointer-events-none absolute top-1/2 start-3 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]"
+                        strokeWidth={1.75}
+                      />
+                      <select
+                        value={slotId}
+                        onChange={(event) => {
+                          const next = slots.find((item) => item.id === event.target.value);
+                          setSlotId(event.target.value);
+                          setTimeFrom(next?.from ?? "");
+                          setTimeTo(next?.to ?? "");
+                        }}
+                        className="h-11 w-full rounded-[10px] border border-[#E5E5E5] bg-white pe-3 ps-10 text-sm font-semibold text-[#170F49] outline-none focus:border-[#D5AF34]"
+                      >
+                        {slots.map((item) => (
+                          <option key={item.id} value={item.id} disabled={!item.available}>
+                            {[item.from, item.to].filter(Boolean).join(" - ") || item.id}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </label>
+                ) : (
+                  <>
+                    <label className="flex min-w-[120px] flex-col gap-1.5">
+                      <span className="sr-only">From</span>
+                      <div className="relative">
+                        <Clock
+                          className="pointer-events-none absolute top-1/2 start-3 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]"
+                          strokeWidth={1.75}
+                        />
+                        <input
+                          type="time"
+                          value={timeFrom}
+                          onChange={(e) => setTimeFrom(e.target.value)}
+                          className="h-11 w-full rounded-[10px] border border-[#E5E5E5] bg-white pe-3 ps-10 text-sm font-semibold text-[#170F49] outline-none focus:border-[#D5AF34]"
+                        />
+                      </div>
+                    </label>
+                    <label className="flex min-w-[120px] flex-col gap-1.5">
+                      <span className="sr-only">To</span>
+                      <div className="relative">
+                        <Clock
+                          className="pointer-events-none absolute top-1/2 start-3 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]"
+                          strokeWidth={1.75}
+                        />
+                        <input
+                          type="time"
+                          value={timeTo}
+                          onChange={(e) => setTimeTo(e.target.value)}
+                          className="h-11 w-full rounded-[10px] border border-[#E5E5E5] bg-white pe-3 ps-10 text-sm font-semibold text-[#170F49] outline-none focus:border-[#D5AF34]"
+                        />
+                      </div>
+                    </label>
+                  </>
+                )}
+                {bookingPrice != null ? (
+                  <div className="inline-flex items-center gap-2 rounded-[10px] bg-[#FBF6E6] px-3 py-2.5 text-sm">
+                    <span className="font-semibold text-[#170F49]">
+                      {t.bookingPrice}
+                    </span>
+                    <span className="font-bold text-[#D5AF34]">
+                      {bookingPrice} {t.currency}
+                    </span>
                   </div>
-                </label>
-                <label className="flex min-w-[120px] flex-col gap-1.5">
-                  <span className="sr-only">To</span>
-                  <div className="relative">
-                    <Clock
-                      className="pointer-events-none absolute top-1/2 start-3 h-4 w-4 -translate-y-1/2 text-[#9CA3AF]"
-                      strokeWidth={1.75}
-                    />
-                    <input
-                      type="time"
-                      value={timeTo}
-                      onChange={(e) => setTimeTo(e.target.value)}
-                      className="h-11 w-full rounded-[10px] border border-[#E5E5E5] bg-white pe-3 ps-10 text-sm font-semibold text-[#170F49] outline-none focus:border-[#D5AF34]"
-                    />
-                  </div>
-                </label>
-                <div className="inline-flex items-center gap-2 rounded-[10px] bg-[#FBF6E6] px-3 py-2.5 text-sm">
-                  <span className="font-semibold text-[#170F49]">
-                    {t.bookingPrice}
-                  </span>
-                  <span className="font-bold text-[#D5AF34]">
-                    {BOOKING_PRICE} {t.currency}
-                  </span>
-                </div>
+                ) : null}
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -382,8 +493,10 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
                   type="button"
                   onClick={() => {
                     setSelectedDate(null);
-                    setTimeFrom("12:46");
-                    setTimeTo("18:30");
+                    setTimeFrom("");
+                    setTimeTo("");
+                    setSlotId("");
+                    setSlots([]);
                   }}
                   className="inline-flex min-w-[100px] items-center justify-center rounded-[10px] border border-[#E5E5E5] bg-white px-5 py-2.5 text-sm font-bold text-[#133D3C] transition hover:bg-[#F5F5F5]"
                 >
@@ -487,7 +600,7 @@ export function BookingPage({ locale, dictionary }: BookingPageProps) {
           title={t.paymentDeadlineTitle}
           description={t.paymentDeadlineDescription}
           payLabel={t.payWithPrice}
-          priceLabel={`${BOOKING_PRICE} ${t.riyal}`}
+          priceLabel={activePrice != null ? `${activePrice} ${t.riyal}` : ""}
           onPay={async () => {
             if (activeBookingId && token) {
               try {

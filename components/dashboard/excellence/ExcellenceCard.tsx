@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { EXCELLENCE_FALLBACK_IMAGE, isExcellencePhoto } from "@/lib/api/excellence";
 import type { DummyExcellence } from "@/lib/dashboard/dummy-excellence";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -21,15 +23,23 @@ export function ExcellenceCard({
   const isAr = locale === "ar";
   const name = isAr ? item.name : item.nameEn;
   const title = isAr ? item.title : item.titleEn;
+  const [broken, setBroken] = useState(false);
+  const showPhoto = !broken && isExcellencePhoto(item.image);
 
   return (
     <article className="flex h-full flex-col gap-3">
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-[17px] bg-[#F5F5F5]">
+      <div className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-[17px] bg-[#F6EFE7]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={item.image}
+          src={showPhoto ? item.image : EXCELLENCE_FALLBACK_IMAGE}
           alt=""
-          className="h-full w-full object-cover"
+          className={
+            showPhoto
+              ? "h-full w-full object-cover"
+              : "h-[70%] w-[70%] object-contain"
+          }
+          draggable={false}
+          onError={() => setBroken(true)}
         />
       </div>
 

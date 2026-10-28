@@ -1,6 +1,6 @@
-import { apiGet, apiPost, apiPostForm, type ApiQuery } from "@/lib/api/client";
+import { apiGetRaw, apiPost, apiPostForm, type ApiQuery } from "@/lib/api/client";
 import { asList } from "@/lib/api/catalog";
-import { formatDateTimeLabel, mapRequestStatus } from "@/lib/api/localized";
+import { formatDateTimeLabel } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
 import type { BookingStatusItem } from "@/lib/dashboard/dummy-venue-bookings";
 import { getPlaceBookings } from "@/lib/api/requests";
@@ -11,8 +11,13 @@ type ApiSlot = {
   time_to?: string | null;
   from?: string | null;
   to?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
   is_available?: boolean;
   available?: boolean;
+  price?: string | number | null;
+  booking_price?: string | number | null;
+  amount?: string | number | null;
 };
 
 export type BookingSlotView = {
@@ -20,40 +25,62 @@ export type BookingSlotView = {
   from: string;
   to: string;
   available: boolean;
+  price: number | null;
 };
+
+export function parseBookingPrice(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const amount = Number(value);
+  return Number.isFinite(amount) ? amount : null;
+}
+
+function slotTime(value?: string | null): string {
+  const raw = (value || "").trim();
+  return raw.length >= 5 ? raw.slice(0, 5) : raw;
+}
 
 export async function getBookingSlots(
   locale: Locale,
   token: string,
   query: { booking_type_id?: number | string; date?: string },
 ) {
-  const data = await apiGet<ApiSlot[]>("/booking-slots", locale, token, query);
-  return asList<ApiSlot>(data).map((slot, index) => ({
-    id: String(slot.id ?? index),
-    from: (slot.time_from || slot.from || "").slice(0, 5),
-    to: (slot.time_to || slot.to || "").slice(0, 5),
-    available: slot.is_available ?? slot.available ?? true,
-  })) satisfies BookingSlotView[];
+  try {
+    const json = await apiGetRaw<Record<string, unknown>>(
+      "/booking-slots",
+      locale,
+      token,
+      query,
+    );
+    return asList<ApiSlot>(json.data ?? json).map((slot, index) => ({
+      id: String(slot.id ?? index),
+      from: slotTime(slot.time_from || slot.from || slot.start_time),
+      to: slotTime(slot.time_to || slot.to || slot.end_time),
+      available: slot.is_available ?? slot.available ?? true,
+      price: parseBookingPrice(slot.price ?? slot.booking_price ?? slot.amount),
+    })) satisfies BookingSlotView[];
+  } catch {
+    return [];
+  }
 }
 
 export async function getAvailableBookingDates(
   locale: Locale,
   token: string,
   query?: ApiQuery,
-) {
+): Promise<string[] | null> {
   try {
-    const data = await apiGet<string[] | { date?: string }[]>(
+    const json = await apiGetRaw<Record<string, unknown>>(
       "/place-bookings/available-dates",
       locale,
       token,
       query,
     );
-    return asList<string | { date?: string }>(data)
+    return asList<string | { date?: string }>(json.data ?? json)
       .map((item) => (typeof item === "string" ? item : item.date || ""))
       .filter(Boolean)
       .map((value) => value.slice(0, 10));
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -61,11 +88,15 @@ export async function checkBookingAvailability(
   date: string,
   locale: Locale,
   token: string,
+  extra?: { booking_type_id?: number | string },
 ) {
   try {
     const data = await apiPost<{ available?: boolean; is_available?: boolean }>(
       "/place-bookings/check-availability",
-      { date },
+      {
+        date,
+        ...(extra?.booking_type_id ? { booking_type_id: Number(extra.booking_type_id) } : {}),
+      },
       locale,
       token,
     );
@@ -84,6 +115,7 @@ export async function createPlaceBooking(
     date_to: string;
     time_from: string;
     time_to: string;
+    booking_slot_id?: number;
     attendees_count?: number;
     additional_notes?: string;
     attachment?: File | null;
@@ -99,6 +131,9 @@ export async function createPlaceBooking(
   body.append("date_to", payload.date_to);
   body.append("time_from", payload.time_from);
   body.append("time_to", payload.time_to);
+  if (payload.booking_slot_id) {
+    body.append("booking_slot_id", String(payload.booking_slot_id));
+  }
   if (payload.attendees_count) {
     body.append("attendees_count", String(payload.attendees_count));
   }
@@ -145,6 +180,7 @@ export async function getBookingStatusItems(
     bookedByEn: item.bookedByEn,
     branch: item.branch,
     branchEn: item.branchEn,
+    price: item.price ?? null,
   }));
 }
 

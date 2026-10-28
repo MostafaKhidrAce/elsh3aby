@@ -717,6 +717,8 @@
         { "value": "last_year", "label": "Last year" },
         { "value": "all_time", "label": "All time" }
       ],
+      "timeSlot": "Time",
+      "timeSlotPlaceholder": "Choose a time",
       "bookingPrice": "Booking price",
       "currency": "SAR",
       "bookNow": "Book now",

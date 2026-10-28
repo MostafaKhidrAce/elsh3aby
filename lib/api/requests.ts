@@ -148,6 +148,7 @@ type ApiPlaceBooking = {
   date_to?: string | null;
   time_from?: string | null;
   time_to?: string | null;
+  price?: string | number | null;
   status?: string | null;
   booking_type?: Named | null;
   family_branch?: Named | null;
@@ -256,8 +257,17 @@ export function toVenueBooking(item: ApiPlaceBooking, locale: Locale): DummyVenu
   const title = typePair(item.booking_type, item.additional_notes || "");
   const bookedBy = item.full_name || item.member?.name || "";
   const branch = typePair(item.family_branch ?? item.branch);
-  const time = [item.time_from, item.time_to].filter(Boolean).join(" – ");
+  const time = [item.time_from, item.time_to]
+    .map((value) => (value || "").slice(0, 5))
+    .filter(Boolean)
+    .join(" – ");
   const status = mapRequestStatus(item.status);
+  const price =
+    item.price == null || item.price === ""
+      ? null
+      : Number.isFinite(Number(item.price))
+        ? Number(item.price)
+        : null;
   const titleAr = title.ar || typeName(locale, item.booking_type) || item.additional_notes || "";
   const titleEn = title.en || titleAr;
   return {
@@ -280,6 +290,7 @@ export function toVenueBooking(item: ApiPlaceBooking, locale: Locale): DummyVenu
     status: status === "rejected" ? "pending" : status,
     canCancel: status === "pending",
     dateKey: (item.date_from || "").slice(0, 10),
+    price,
   };
 }
 
