@@ -9,7 +9,12 @@ import { EventsCalendarModal } from "@/components/dashboard/events/EventsCalenda
 import { EventsCategorySection } from "@/components/dashboard/events/EventsCategorySection";
 import { EventsDateSlider } from "@/components/dashboard/events/EventsDateSlider";
 import { EventsEmptyState } from "@/components/dashboard/events/EventsEmptyState";
+import {
+  EventsFilterModal,
+  type EventsFilterValues,
+} from "@/components/dashboard/events/EventsFilterModal";
 import { EventsToolbar } from "@/components/dashboard/events/EventsToolbar";
+import { getFamilyBranches, type FamilyBranch } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import { getEventTypes, type NamedType } from "@/lib/api/catalog";
 import {
@@ -18,9 +23,10 @@ import {
   toggleEventReminder,
   type EventCardView,
 } from "@/lib/api/events";
-import { pickLocalized } from "@/lib/api/localized";
+import { pickNamed } from "@/lib/api/localized";
 import { useAuth } from "@/lib/auth/auth-context";
-import { buildSliderDates, toDateKey } from "@/lib/dashboard/dummy-events";
+import { buildSliderDates, parseDateKey, toDateKey } from "@/lib/dashboard/dummy-events";
+import { formatHijriLabel } from "@/lib/hijri";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 
@@ -40,9 +46,15 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
 
   const [selectedDate, setSelectedDate] = useState(todayKey);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filters, setFilters] = useState<EventsFilterValues>({
+    typeId: "",
+    branchId: "",
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [types, setTypes] = useState<NamedType[]>([]);
+  const [branches, setBranches] = useState<FamilyBranch[]>([]);
   const [events, setEvents] = useState<EventCardView[]>([]);
   const [datesWithEvents, setDatesWithEvents] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -53,18 +65,43 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
     setLoading(true);
     setError(null);
     try {
-      const [liveTypes, liveEvents] = await Promise.all([
+      const [liveTypes, liveEvents, liveBranches] = await Promise.all([
         getEventTypes(locale, token),
-        getEvents(locale, token, { date: selectedDate, per_page: 50 }),
+        getEvents(locale, token, {
+          date: selectedDate,
+          type_id: filters.typeId || undefined,
+          family_branch_id: filters.branchId || undefined,
+          per_page: 50,
+        }),
+        getFamilyBranches(locale, token).catch(() => [] as FamilyBranch[]),
       ]);
       setTypes(liveTypes);
       setEvents(liveEvents);
+      setBranches(liveBranches);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
     } finally {
       setLoading(false);
     }
-  }, [token, locale, selectedDate, dictionary.common.loadError]);
+  }, [token, locale, selectedDate, filters, dictionary.common.loadError]);
+
+  const loadRangeMarkers = useCallback(
+    (from: string, to: string) => {
+      if (!token) return;
+      void getEvents(locale, token, { date_from: from, date_to: to, per_page: 50 })
+        .then((items) =>
+          setDatesWithEvents((prev) => {
+            const next = new Set(prev);
+            for (const item of items) {
+              if (item.dateKey) next.add(item.dateKey);
+            }
+            return next;
+          }),
+        )
+        .catch(() => undefined);
+    },
+    [token, locale],
+  );
 
   useEffect(() => {
     if (!isReady || !token) return;
@@ -73,26 +110,40 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
 
   useEffect(() => {
     if (!token) return;
-    const from = sliderDates[0];
-    const to = sliderDates[sliderDates.length - 1];
-    void getEvents(locale, token, { date_from: from, date_to: to, per_page: 50 })
-      .then((items) => setDatesWithEvents(new Set(items.map((item) => item.dateKey))))
-      .catch(() => undefined);
-  }, [token, locale, sliderDates]);
+    loadRangeMarkers(sliderDates[0], sliderDates[sliderDates.length - 1]);
+  }, [token, sliderDates, loadRangeMarkers]);
 
   const filteredEvents = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return events;
-    return events.filter((event) =>
-      [event.title, event.description, event.location, event.publisherName, event.branch]
+    return events.filter((event) => {
+      if (filters.typeId && String(event.typeId) !== filters.typeId) return false;
+      if (filters.branchId && String(event.branchId ?? "") !== filters.branchId) return false;
+      if (!query) return true;
+      return [event.title, event.description, event.location, event.publisherName, event.branch]
         .filter(Boolean)
         .join(" ")
         .toLowerCase()
-        .includes(query),
-    );
-  }, [events, searchQuery]);
+        .includes(query);
+    });
+  }, [events, searchQuery, filters]);
 
-  const hijriLabel = events.find((event) => event.hijriLabel)?.hijriLabel || t.hijriDate;
+  const hijriLabel = formatHijriLabel(parseDateKey(selectedDate), locale);
+  const typeOptions = useMemo(
+    () =>
+      types.map((type) => ({
+        value: String(type.id),
+        label: pickNamed(locale, type),
+      })),
+    [types, locale],
+  );
+  const branchOptions = useMemo(
+    () =>
+      branches.map((branch) => ({
+        value: String(branch.id),
+        label: pickNamed(locale, branch),
+      })),
+    [branches, locale],
+  );
 
   const groupedTypes = useMemo(() => {
     const used = new Map<number, EventCardView[]>();
@@ -105,7 +156,7 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
       .filter((type) => used.has(type.id))
       .map((type) => ({
         id: String(type.id),
-        title: pickLocalized(locale, type.name_ar, type.name_en, type.name || ""),
+        title: pickNamed(locale, type),
         events: used.get(type.id) ?? [],
       }));
     for (const [typeId, typeEvents] of used) {
@@ -219,6 +270,8 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
           filterLabel={t.filter}
           searchQuery={searchQuery}
           onSearchChange={setSearchQuery}
+          filterActive={Boolean(filters.typeId || filters.branchId)}
+          onFilterClick={() => setFilterOpen(true)}
         />
 
         <DashboardFetchState
@@ -276,9 +329,26 @@ export function EventsPage({ locale, dictionary }: EventsPageProps) {
         onSelectDate={setSelectedDate}
         datesWithEvents={datesWithEvents}
         weekdays={t.weekdays}
-        months={t.months}
         locale={locale}
         title={t.calendar}
+        onVisibleRangeChange={loadRangeMarkers}
+      />
+
+      <EventsFilterModal
+        open={filterOpen}
+        locale={locale}
+        title={t.filterModalTitle}
+        typeLabel={t.filterType}
+        branchLabel={t.filterBranch}
+        showResultsLabel={t.showResults}
+        typeOptions={typeOptions}
+        branchOptions={branchOptions}
+        values={filters}
+        onClose={() => setFilterOpen(false)}
+        onApply={(next) => {
+          setFilters(next);
+          setFilterOpen(false);
+        }}
       />
     </div>
   );

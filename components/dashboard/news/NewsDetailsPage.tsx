@@ -11,6 +11,7 @@ import { EventImageSlider } from "@/components/dashboard/events/EventImageSlider
 import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSuccessModal";
 import { NewsCommentsModal } from "@/components/dashboard/news/NewsCommentsModal";
 import { NewsAddCommentModal } from "@/components/dashboard/news/NewsAddCommentModal";
+import { NewsShareModal } from "@/components/dashboard/news/NewsShareModal";
 import { ApiError } from "@/lib/api/client";
 import {
   addNewsComment,
@@ -49,6 +50,7 @@ export function NewsDetailsPage({
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const load = useCallback(async () => {
     if (!token) return;
@@ -152,8 +154,9 @@ export function NewsDetailsPage({
                   </h2>
                   <button
                     type="button"
-                    aria-label="Share"
-                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E5E5E5] text-[#133D3C]"
+                    aria-label={t.share}
+                    onClick={() => setShareOpen(true)}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E5E5E5] text-[#133D3C] transition hover:bg-[#F5F5F5]"
                   >
                     <Share2 className="h-4 w-4" />
                   </button>
@@ -231,6 +234,21 @@ export function NewsDetailsPage({
             setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
           }
         }}
+      />
+
+      <NewsShareModal
+        open={shareOpen}
+        locale={locale}
+        title={t.shareTitle}
+        url={typeof window !== "undefined" ? window.location.href : ""}
+        text={title}
+        whatsappLabel={t.shareWhatsapp}
+        facebookLabel={t.shareFacebook}
+        xLabel={t.shareX}
+        telegramLabel={t.shareTelegram}
+        copyLabel={t.copyLink}
+        copiedLabel={t.copied}
+        onClose={() => setShareOpen(false)}
       />
 
       {successOpen ? (

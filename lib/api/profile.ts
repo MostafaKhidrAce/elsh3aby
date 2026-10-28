@@ -1,6 +1,6 @@
 import { apiGet, apiPost, apiPostForm, apiPut } from "@/lib/api/client";
 import { asList } from "@/lib/api/catalog";
-import { resolveMedia } from "@/lib/api/localized";
+import { pairLocalized, pickNamed, resolveMedia } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
 import type { FamilyBankAccount } from "@/lib/dashboard/dummy-profile";
 
@@ -31,7 +31,11 @@ type ApiProfile = {
 type ApiBankAccount = {
   id: number;
   bank_name?: string | null;
+  bank_name_ar?: string | null;
+  bank_name_en?: string | null;
   account_type?: string | null;
+  account_type_ar?: string | null;
+  account_type_en?: string | null;
   account_number?: string | null;
   iban_number?: string | null;
   logo_url?: string | null;
@@ -40,7 +44,7 @@ type ApiBankAccount = {
 
 const BANK_COLORS = ["#1B5E20", "#0D47A1", "#B71C1C", "#4A148C", "#133D3C"];
 
-export function toProfileView(item: ApiProfile): ProfileView {
+export function toProfileView(item: ApiProfile, locale: Locale = "ar"): ProfileView {
   const genderRaw = item.gender;
   const female =
     genderRaw === 1 || genderRaw === "1" || genderRaw === "female" || genderRaw === "انثى";
@@ -49,8 +53,7 @@ export function toProfileView(item: ApiProfile): ProfileView {
     phone: item.phone || "",
     email: item.email || "",
     nationalId: item.national_id || "",
-    familyBranch:
-      item.family_branch?.name_ar || item.family_branch?.name_en || item.family_branch?.name || "",
+    familyBranch: pickNamed(locale, item.family_branch),
     gender: female ? "female" : "male",
     birthDate: (item.date_of_birth || "").slice(0, 10),
     image: item.image_url || item.image ? resolveMedia(item.image_url || item.image) : null,
@@ -63,12 +66,17 @@ export function toBankAccount(item: ApiBankAccount, index: number): FamilyBankAc
     number.length > 8
       ? `${number.slice(0, 4)} **** **** ${number.slice(-4)}`
       : number;
+  const bank = pairLocalized(item.bank_name_ar, item.bank_name_en || item.bank_name);
+  const accountType = pairLocalized(
+    item.account_type_ar,
+    item.account_type_en || item.account_type,
+  );
   return {
     id: String(item.id),
-    bankName: item.bank_name || "",
-    bankNameEn: item.bank_name || "",
-    accountType: item.account_type || "",
-    accountTypeEn: item.account_type || "",
+    bankName: bank.ar,
+    bankNameEn: bank.en,
+    accountType: accountType.ar,
+    accountTypeEn: accountType.en,
     maskedNumber: masked,
     initial: (item.bank_name || "B").slice(0, 1),
     color: BANK_COLORS[index % BANK_COLORS.length],
@@ -77,7 +85,7 @@ export function toBankAccount(item: ApiBankAccount, index: number): FamilyBankAc
 
 export async function getProfile(locale: Locale, token: string) {
   const data = await apiGet<ApiProfile>("/profile", locale, token);
-  return toProfileView(data);
+  return toProfileView(data, locale);
 }
 
 export async function updateProfile(

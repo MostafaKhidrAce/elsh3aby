@@ -9,6 +9,7 @@ import { asList } from "@/lib/api/catalog";
 import {
   extractImageUrls,
   formatDateTimeLabel,
+  pairLocalized,
   pickLocalized,
   resolveMedia,
 } from "@/lib/api/localized";
@@ -49,12 +50,16 @@ type ApiNews = {
   title_en?: string | null;
   body?: string | null;
   body_ar?: string | null;
+  body_en?: string | null;
   description?: string | null;
   description_ar?: string | null;
+  description_en?: string | null;
   content?: string | null;
   content_ar?: string | null;
+  content_en?: string | null;
   quote?: string | null;
   quote_ar?: string | null;
+  quote_en?: string | null;
   created_at?: string | null;
   published_at?: string | null;
   type_id?: number | null;
@@ -82,28 +87,29 @@ export function toNewsCardView(item: ApiNews, locale: Locale): NewsCardView {
   const images = extractImageUrls(
     item.gallery ?? item.images ?? item.image_url ?? item.image ?? item.cover,
   ).map((url) => resolveMedia(url, FALLBACK));
-  const titleAr = item.title_ar || item.title || "";
-  const titleEn = item.title_en || item.title || titleAr;
-  const bodyAr =
-    item.body_ar || item.description_ar || item.content_ar || item.body || item.description || "";
-  const bodyEn = item.body || item.description || item.content || bodyAr;
+  const title = pairLocalized(item.title_ar, item.title_en || item.title);
+  const body = pairLocalized(
+    item.body_ar || item.description_ar || item.content_ar,
+    item.body_en || item.description_en || item.content_en || item.body || item.description || item.content,
+  );
+  const quote = pairLocalized(item.quote_ar, item.quote_en || item.quote);
   const date = item.published_at || item.created_at;
   return {
     id: String(item.id),
     typeId: item.type_id ?? item.type?.id ?? null,
     typeName: pickLocalized(locale, item.type?.name_ar, item.type?.name_en),
-    title: titleAr,
-    titleEn,
+    title: title.ar,
+    titleEn: title.en,
     dateLabel: formatDateTimeLabel(date, "ar"),
     dateLabelEn: formatDateTimeLabel(date, "en"),
     author: item.member?.name || item.author || (locale === "ar" ? "إدارة الأسرة" : "Family admin"),
     authorEn: item.member?.name || item.author || "Family admin",
     coverImage: images[0] ?? FALLBACK,
     images: images.length ? images : [FALLBACK],
-    body: bodyAr,
-    bodyEn,
-    quote: item.quote_ar || item.quote || undefined,
-    quoteEn: item.quote || item.quote_ar || undefined,
+    body: body.ar,
+    bodyEn: body.en,
+    quote: quote.ar || undefined,
+    quoteEn: quote.en || undefined,
   };
 }
 

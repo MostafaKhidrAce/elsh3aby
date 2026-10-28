@@ -25,6 +25,7 @@ export type DummyExcellence = {
   bio: string;
   bioEn: string;
   image: string;
+  branchId?: number;
   branch: string;
   branchEn: string;
   ageGroup: "youths" | "adults" | "seniors";

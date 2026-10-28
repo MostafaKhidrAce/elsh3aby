@@ -8,7 +8,7 @@ import { DashboardItemsEmptyState } from "@/components/dashboard/DashboardItemsE
 import { AchievementCard } from "@/components/dashboard/achievements/AchievementCard";
 import { ApiError } from "@/lib/api/client";
 import { getBookCategories, getBooks, type BookCategory } from "@/lib/api/books";
-import { pickLocalized } from "@/lib/api/localized";
+import { pickNamed } from "@/lib/api/localized";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { DummyAchievement } from "@/lib/dashboard/dummy-achievements";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -67,7 +67,7 @@ export function AchievementsPage({ locale, dictionary }: AchievementsPageProps) 
     { id: "all", label: t.filterAll, icon: BookOpen },
     ...categories.map((item) => ({
       id: String(item.id),
-      label: pickLocalized(locale, item.name_ar, item.name_en),
+      label: pickNamed(locale, item),
       icon: BookOpen,
     })),
   ];

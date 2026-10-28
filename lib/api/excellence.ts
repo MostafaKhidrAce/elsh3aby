@@ -1,6 +1,6 @@
 import { apiGet, apiGetPage, apiPost, type ApiQuery } from "@/lib/api/client";
 import { asList } from "@/lib/api/catalog";
-import { pickLocalized, resolveMedia } from "@/lib/api/localized";
+import { pairLocalized, pairNamed, pickLocalized, resolveMedia } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
 import type { DummyExcellence, ExcellencePraise } from "@/lib/dashboard/dummy-excellence";
 
@@ -8,6 +8,8 @@ type Named = { id?: number; name_ar?: string | null; name_en?: string | null };
 
 type ApiExcellence = {
   id: number;
+  user_id?: number | null;
+  user_name?: string | null;
   title?: string | null;
   title_ar?: string | null;
   name?: string | null;
@@ -18,10 +20,13 @@ type ApiExcellence = {
   image?: string | null;
   image_url?: string | null;
   age_category?: string | null;
+  age_category_label?: string | null;
   achievement_date?: string | null;
   year?: string | number | null;
   type_id?: number | null;
   type?: Named | null;
+  family_branch_id?: number | null;
+  family_branch_name?: string | null;
   family_branch?: Named | null;
   branch?: Named | null;
   member?: { name?: string | null } | null;
@@ -41,14 +46,18 @@ function ageGroup(value?: string | null): DummyExcellence["ageGroup"] {
 }
 
 export function toExcellence(item: ApiExcellence, locale: Locale): DummyExcellence {
-  const name = item.title || item.title_ar || item.member?.name || item.name || "";
-  const title = item.achievement || item.achievement_ar || pickLocalized(locale, item.type?.name_ar, item.type?.name_en);
-  const bio = item.description_ar || item.description || "";
-  const branch = pickLocalized(
-    locale,
-    item.family_branch?.name_ar,
-    item.family_branch?.name_en,
-    item.branch?.name_ar || item.branch?.name_en || "",
+  const name = pairLocalized(
+    item.title_ar || item.user_name || item.member?.name || item.name,
+    item.title || item.name || item.user_name || item.member?.name,
+  );
+  const title = pairLocalized(
+    item.achievement_ar || item.type?.name_ar,
+    item.achievement || item.type?.name_en,
+  );
+  const bio = pairLocalized(item.description_ar, item.description);
+  const branch = pairNamed(
+    item.family_branch ?? item.branch,
+    item.family_branch_name || "",
   );
   const year =
     String(item.year || "").trim() ||
@@ -58,17 +67,18 @@ export function toExcellence(item: ApiExcellence, locale: Locale): DummyExcellen
     category: "community",
     typeId: item.type_id ?? item.type?.id ?? 0,
     typeName: pickLocalized(locale, item.type?.name_ar, item.type?.name_en),
-    name,
-    nameEn: name,
-    title,
-    titleEn: title,
+    name: name.ar,
+    nameEn: name.en,
+    title: title.ar,
+    titleEn: title.en,
     year,
-    bio,
-    bioEn: item.description || bio,
+    bio: bio.ar,
+    bioEn: bio.en,
     image: resolveMedia(item.image_url || item.image),
-    branch,
-    branchEn: branch,
-    ageGroup: ageGroup(item.age_category),
+    branchId: Number(item.family_branch_id ?? item.family_branch?.id ?? item.branch?.id) || undefined,
+    branch: branch.ar,
+    branchEn: branch.en,
+    ageGroup: ageGroup(item.age_category || item.age_category_label),
     praises: [],
   };
 }

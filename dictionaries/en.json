@@ -403,6 +403,10 @@
       "allSections": "All sections",
       "searchPlaceholder": "Search for an event",
       "filter": "Filter",
+      "filterModalTitle": "Filter by",
+      "filterType": "Event type",
+      "filterBranch": "Branch",
+      "showResults": "Show results",
       "remind": "Remind me of the event",
       "cancelRemind": "Cancel reminder",
       "rateEvent": "Rate event",
@@ -497,7 +501,15 @@
       "reviewComment": "Review",
       "commentSuccessTitle": "Comment published",
       "commentSuccessDescription": "Thank you for participating. Your comment was sent successfully. It will be reviewed by administration and then published.",
-      "ok": "OK"
+      "ok": "OK",
+      "share": "Share",
+      "shareTitle": "Share this news",
+      "shareWhatsapp": "WhatsApp",
+      "shareFacebook": "Facebook",
+      "shareX": "X",
+      "shareTelegram": "Telegram",
+      "copyLink": "Copy link",
+      "copied": "Link copied"
     },
     "excellencePage": {
       "title": "Family excellence",

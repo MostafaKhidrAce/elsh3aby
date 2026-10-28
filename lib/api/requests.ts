@@ -9,6 +9,8 @@ import { asList } from "@/lib/api/catalog";
 import {
   formatDateTimeLabel,
   mapRequestStatus,
+  pairLocalized,
+  pairNamed,
   pickLocalized,
   resolveMedia,
 } from "@/lib/api/localized";
@@ -26,6 +28,10 @@ type Named = { id?: number; name_ar?: string | null; name_en?: string | null; na
 
 function typeName(locale: Locale, type?: Named | null): string {
   return pickLocalized(locale, type?.name_ar, type?.name_en, type?.name || "");
+}
+
+function typePair(type?: Named | null, fallback = "") {
+  return pairNamed(type, fallback);
 }
 
 function attachmentsFrom(value: unknown): RequestAttachment[] {
@@ -117,10 +123,14 @@ type ApiDiscountOffer = {
   offer_title?: string | null;
   title?: string | null;
   title_ar?: string | null;
+  title_en?: string | null;
   description?: string | null;
   description_ar?: string | null;
+  description_en?: string | null;
   store_activity_name?: string | null;
   region_city?: string | null;
+  region_city_ar?: string | null;
+  region_city_en?: string | null;
   start_date?: string | null;
   end_date?: string | null;
   coupon_code?: string | null;
@@ -150,7 +160,7 @@ type ApiPlaceBooking = {
 export function toHelpRequest(item: ApiHelpOrder, locale: Locale): DummyRequest {
   const title = item.request_title || item.title || "";
   const description = item.request_description || item.description || "";
-  const type = typeName(locale, item.type ?? item.help_type);
+  const type = typePair(item.type ?? item.help_type);
   return {
     id: String(item.id),
     category: "help",
@@ -161,8 +171,8 @@ export function toHelpRequest(item: ApiHelpOrder, locale: Locale): DummyRequest 
     dateLabelEn: formatDateTimeLabel(item.created_at, "en"),
     description,
     descriptionEn: description,
-    typeLabel: type,
-    typeLabelEn: type,
+    typeLabel: type.ar || typeName(locale, item.type ?? item.help_type),
+    typeLabelEn: type.en || type.ar,
     requestCode: String(item.id),
     nationalId: item.national_id || "",
     attachments: attachmentsFrom(item.attachments ?? item.attachment),
@@ -170,7 +180,7 @@ export function toHelpRequest(item: ApiHelpOrder, locale: Locale): DummyRequest 
 }
 
 export function toConsultRequest(item: ApiConsultation, locale: Locale): DummyRequest {
-  const type = typeName(locale, item.consultant_type);
+  const type = typePair(item.consultant_type);
   return {
     id: String(item.id),
     category: "consult",
@@ -181,8 +191,8 @@ export function toConsultRequest(item: ApiConsultation, locale: Locale): DummyRe
     dateLabelEn: formatDateTimeLabel(item.created_at, "en"),
     description: item.consultation_text || "",
     descriptionEn: item.consultation_text || "",
-    consultType: type,
-    consultTypeEn: type,
+    consultType: type.ar || typeName(locale, item.consultant_type),
+    consultTypeEn: type.en || type.ar,
     replies: (item.replies ?? []).map((reply) => ({
       id: String(reply.id),
       author: reply.member?.name || (locale === "ar" ? "مستشار" : "Consultant"),
@@ -198,12 +208,13 @@ export function toConsultRequest(item: ApiConsultation, locale: Locale): DummyRe
 export function toPublishRequest(item: ApiPublishRequest): DummyNewsPublishRequest {
   const typeId = item.request_type_id ?? item.request_type?.id ?? item.type?.id ?? 0;
   const status = mapRequestStatus(item.status);
+  const type = typePair(item.request_type ?? item.type);
   return {
     id: String(item.id),
     type: typeId === 2 ? "meetings" : "wedding",
     typeId,
-    typeName: item.request_type?.name_ar || item.type?.name_ar || "",
-    typeNameEn: item.request_type?.name_en || item.type?.name_en || "",
+    typeName: type.ar,
+    typeNameEn: type.en,
     status: status === "approved" ? "accepted" : status === "rejected" ? "rejected" : "review",
     title: item.advertiser_name || "",
     titleEn: item.advertiser_name || "",
@@ -217,35 +228,42 @@ export function toPublishRequest(item: ApiPublishRequest): DummyNewsPublishReque
 }
 
 export function toOfferCard(item: ApiDiscountOffer): DummyOffer {
-  const title = item.offer_title || item.title_ar || item.title || "";
+  const title = pairLocalized(item.title_ar || item.offer_title, item.title_en || item.title);
+  const description = pairLocalized(item.description_ar, item.description_en || item.description);
+  const location = pairLocalized(
+    item.region_city_ar || item.region_city || item.store_activity_name,
+    item.region_city_en || item.region_city || item.store_activity_name,
+  );
   const image = resolveMedia(item.image_url || item.attachment, "");
   return {
     id: String(item.id),
-    title,
-    titleEn: item.title || title,
-    description: item.description_ar || item.description || "",
-    descriptionEn: item.description || item.description_ar || "",
+    title: title.ar,
+    titleEn: title.en,
+    description: description.ar,
+    descriptionEn: description.en,
     dateLabel: formatDateTimeLabel(item.created_at, "ar"),
     dateLabelEn: formatDateTimeLabel(item.created_at, "en"),
     validityLabel: [item.start_date, item.end_date].filter(Boolean).join(" - "),
     validityLabelEn: [item.start_date, item.end_date].filter(Boolean).join(" - "),
-    location: item.region_city || item.store_activity_name || "",
-    locationEn: item.region_city || item.store_activity_name || "",
+    location: location.ar,
+    locationEn: location.en,
     image: image || "/placeholder/user-placeholder-img.svg",
     couponCode: item.coupon_code || "",
   };
 }
 
 export function toVenueBooking(item: ApiPlaceBooking, locale: Locale): DummyVenueBooking {
-  const title = typeName(locale, item.booking_type) || item.additional_notes || "";
+  const title = typePair(item.booking_type, item.additional_notes || "");
   const bookedBy = item.full_name || item.member?.name || "";
-  const branch = typeName(locale, item.family_branch ?? item.branch);
+  const branch = typePair(item.family_branch ?? item.branch);
   const time = [item.time_from, item.time_to].filter(Boolean).join(" – ");
   const status = mapRequestStatus(item.status);
+  const titleAr = title.ar || typeName(locale, item.booking_type) || item.additional_notes || "";
+  const titleEn = title.en || titleAr;
   return {
     id: String(item.id),
-    title,
-    titleEn: title,
+    title: titleAr,
+    titleEn,
     description: item.additional_notes || item.description || "",
     descriptionEn: item.additional_notes || item.description || "",
     dateLabel: formatDateTimeLabel(item.date_from, "ar"),
@@ -253,12 +271,12 @@ export function toVenueBooking(item: ApiPlaceBooking, locale: Locale): DummyVenu
     time,
     timeEn: time,
     image: resolveMedia(item.image || item.attachment, "/placeholder/user-placeholder-img.svg"),
-    hallLabel: title,
-    hallLabelEn: title,
+    hallLabel: titleAr,
+    hallLabelEn: titleEn,
     bookedBy,
     bookedByEn: bookedBy,
-    branch,
-    branchEn: branch,
+    branch: branch.ar,
+    branchEn: branch.en,
     status: status === "rejected" ? "pending" : status,
     canCancel: status === "pending",
     dateKey: (item.date_from || "").slice(0, 10),

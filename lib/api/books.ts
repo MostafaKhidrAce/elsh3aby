@@ -3,7 +3,8 @@ import { asList } from "@/lib/api/catalog";
 import {
   extractImageUrls,
   formatDateTimeLabel,
-  pickLocalized,
+  pairLocalized,
+  pairNamed,
   resolveMedia,
 } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
@@ -20,8 +21,10 @@ type ApiBook = {
   id: number;
   title?: string | null;
   title_ar?: string | null;
+  title_en?: string | null;
   description?: string | null;
   description_ar?: string | null;
+  description_en?: string | null;
   author_name?: string | null;
   cover_image?: string | null;
   image_url?: string | null;
@@ -35,37 +38,31 @@ type ApiBook = {
 
 const FALLBACK = "/placeholder/user-placeholder-img.svg";
 
-export function toAchievement(item: ApiBook, locale: Locale): DummyAchievement {
-  const titleAr = item.title_ar || item.title || "";
-  const titleEn = item.title || titleAr;
-  const descriptionAr = item.description_ar || item.description || "";
-  const descriptionEn = item.description || descriptionAr;
+export function toAchievement(item: ApiBook, _locale: Locale): DummyAchievement {
+  const title = pairLocalized(item.title_ar, item.title_en || item.title);
+  const description = pairLocalized(item.description_ar, item.description_en || item.description);
   const images = extractImageUrls(
     item.gallery ?? item.cover_image ?? item.image_url,
   ).map((url) => resolveMedia(url, FALLBACK));
-  const badge = pickLocalized(locale, item.category?.name_ar, item.category?.name_en);
-  const branch = pickLocalized(
-    locale,
-    item.family_branch?.name_ar,
-    item.family_branch?.name_en,
-  );
+  const badge = pairNamed(item.category);
+  const branch = pairNamed(item.family_branch);
   return {
     id: String(item.id),
     category: "scientific",
     categoryId: item.category_id ?? item.category?.id ?? 0,
-    badge,
-    badgeEn: item.category?.name_en || badge,
+    badge: badge.ar,
+    badgeEn: badge.en,
     badgeTone: "gold",
-    title: titleAr,
-    titleEn,
-    description: descriptionAr,
-    descriptionEn,
+    title: title.ar,
+    titleEn: title.en,
+    description: description.ar,
+    descriptionEn: description.en,
     dateLabel: formatDateTimeLabel(item.published_date || item.created_at, "ar"),
     dateLabelEn: formatDateTimeLabel(item.published_date || item.created_at, "en"),
     author: item.author_name || "",
     authorEn: item.author_name || "",
-    branch,
-    branchEn: branch,
+    branch: branch.ar,
+    branchEn: branch.en,
     images: images.length ? images : [FALLBACK],
   };
 }

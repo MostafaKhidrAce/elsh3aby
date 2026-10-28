@@ -1,6 +1,6 @@
 import { apiGet, apiGetPage, apiPost, apiPostForm, type ApiQuery } from "@/lib/api/client";
 import { asList } from "@/lib/api/catalog";
-import { pickLocalized, resolveMedia } from "@/lib/api/localized";
+import { pairLocalized, pickLocalized, resolveMedia } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
 import type {
   ElectionCandidate,
@@ -28,9 +28,16 @@ type ApiCandidate = {
   id: number;
   name?: string | null;
   name_ar?: string | null;
+  name_en?: string | null;
   position?: string | null;
+  position_ar?: string | null;
+  position_en?: string | null;
   bio?: string | null;
+  bio_ar?: string | null;
+  bio_en?: string | null;
   manifesto?: string | null;
+  manifesto_ar?: string | null;
+  manifesto_en?: string | null;
   image?: string | null;
   image_url?: string | null;
   vote_percent?: number | null;
@@ -64,22 +71,25 @@ function roleLabel(role: ElectionRoleId, locale: Locale): string {
 }
 
 export function toElectionCandidate(item: ApiCandidate, locale: Locale): ElectionCandidate {
-  const roleId = roleFromPosition(item.position);
-  const name = item.name_ar || item.name || "";
-  const role = roleLabel(roleId, locale);
+  const roleId = roleFromPosition(item.position_ar || item.position || item.position_en);
+  const name = pairLocalized(item.name_ar, item.name_en || item.name);
+  const bio = pairLocalized(
+    item.bio_ar || item.manifesto_ar,
+    item.bio_en || item.manifesto_en || item.bio || item.manifesto,
+  );
   return {
     id: String(item.id),
     roleId,
-    name,
-    nameEn: item.name || name,
-    role,
+    name: name.ar,
+    nameEn: name.en,
+    role: roleLabel(roleId, locale),
     roleEn: roleLabel(roleId, "en"),
     image: resolveMedia(item.image_url || item.image),
     showMedal: roleId === "president",
     votePercent: Number(item.vote_percent ?? item.vote_percentage ?? 0),
     voteCount: Number(item.votes_count ?? item.vote_count ?? 0),
-    bio: item.bio || item.manifesto || "",
-    bioEn: item.bio || item.manifesto || "",
+    bio: bio.ar,
+    bioEn: bio.en,
     files: (item.files ?? []).map((file, index) => ({
       id: String(file.id ?? index),
       name: file.name || (locale === "ar" ? "ملف" : "File"),

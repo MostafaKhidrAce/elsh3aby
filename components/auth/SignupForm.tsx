@@ -29,7 +29,7 @@ import {
   registerMember,
   sendOtp,
 } from "@/lib/api/auth";
-import { pickLocalized, toApiPhone } from "@/lib/api/localized";
+import { pickNamed, toApiPhone } from "@/lib/api/localized";
 import { savePasswordResetState } from "@/lib/auth/reset-flow";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -117,7 +117,7 @@ export function SignupForm({ dictionary }: SignupFormProps) {
         setBranchOptions(
           branches.map((branch) => ({
             value: String(branch.id),
-            label: pickLocalized(locale, branch.name_ar, branch.name_en),
+            label: pickNamed(locale, branch),
           })),
         );
       } catch (err) {

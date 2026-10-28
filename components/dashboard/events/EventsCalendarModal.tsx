@@ -2,10 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { parseDateKey, toDateKey } from "@/lib/dashboard/dummy-events";
 import {
-  parseDateKey,
-  toDateKey,
-} from "@/lib/dashboard/dummy-events";
+  buildHijriMonthCells,
+  formatHijriMonthYear,
+  hijriDay,
+  hijriMonthRange,
+  shiftHijriMonth,
+  startOfHijriMonth,
+} from "@/lib/hijri";
 import type { Locale } from "@/lib/i18n/config";
 
 type EventsCalendarModalProps = {
@@ -15,33 +20,10 @@ type EventsCalendarModalProps = {
   onSelectDate: (dateKey: string) => void;
   datesWithEvents: Set<string>;
   weekdays: string[];
-  months: string[];
   locale: Locale;
   title: string;
+  onVisibleRangeChange?: (from: string, to: string) => void;
 };
-
-function startOfMonth(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
-}
-
-/** Saturday-first calendar cells for a month view. */
-function buildMonthCells(viewMonth: Date): (Date | null)[] {
-  const first = startOfMonth(viewMonth);
-  // JS Sun=0 … Sat=6 → Sat-first offset
-  const offset = (first.getDay() + 1) % 7;
-  const daysInMonth = new Date(
-    viewMonth.getFullYear(),
-    viewMonth.getMonth() + 1,
-    0,
-  ).getDate();
-
-  const cells: (Date | null)[] = Array.from({ length: offset }, () => null);
-  for (let day = 1; day <= daysInMonth; day += 1) {
-    cells.push(new Date(viewMonth.getFullYear(), viewMonth.getMonth(), day));
-  }
-  while (cells.length % 7 !== 0) cells.push(null);
-  return cells;
-}
 
 export function EventsCalendarModal({
   open,
@@ -50,16 +32,16 @@ export function EventsCalendarModal({
   onSelectDate,
   datesWithEvents,
   weekdays,
-  months,
   locale,
   title,
+  onVisibleRangeChange,
 }: EventsCalendarModalProps) {
   const isAr = locale === "ar";
   const selected = parseDateKey(selectedDate);
-  const [viewMonth, setViewMonth] = useState(() => startOfMonth(selected));
+  const [viewMonth, setViewMonth] = useState(() => startOfHijriMonth(selected));
 
   useEffect(() => {
-    if (open) setViewMonth(startOfMonth(parseDateKey(selectedDate)));
+    if (open) setViewMonth(startOfHijriMonth(parseDateKey(selectedDate)));
   }, [open, selectedDate]);
 
   useEffect(() => {
@@ -78,19 +60,23 @@ export function EventsCalendarModal({
     };
   }, [open, onClose]);
 
-  const cells = useMemo(() => buildMonthCells(viewMonth), [viewMonth]);
-  const monthLabel = `${months[viewMonth.getMonth()]} ${viewMonth.getFullYear()}`;
+  useEffect(() => {
+    if (!open || !onVisibleRangeChange) return;
+    const range = hijriMonthRange(viewMonth);
+    onVisibleRangeChange(range.from, range.to);
+  }, [open, viewMonth, onVisibleRangeChange]);
+
+  const cells = useMemo(() => buildHijriMonthCells(viewMonth), [viewMonth]);
+  const monthLabel = formatHijriMonthYear(viewMonth, locale);
 
   if (!open) return null;
 
   function shiftMonth(delta: number) {
-    setViewMonth(
-      new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1),
-    );
+    setViewMonth(shiftHijriMonth(viewMonth, delta));
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[210] flex items-center justify-center p-4">
       <button
         type="button"
         aria-label="Close"
@@ -99,6 +85,7 @@ export function EventsCalendarModal({
       />
 
       <div
+        dir={isAr ? "rtl" : "ltr"}
         role="dialog"
         aria-modal="true"
         aria-label={title}
@@ -175,7 +162,7 @@ export function EventsCalendarModal({
                       : "text-[#170F49] hover:bg-[#F5F5F5]"
                 }`}
               >
-                {date.getDate()}
+                {hijriDay(date)}
               </button>
             );
           })}

@@ -1,6 +1,6 @@
 import { apiGet, apiPost } from "@/lib/api/client";
 import { asList } from "@/lib/api/catalog";
-import { pickLocalized } from "@/lib/api/localized";
+import { pairLocalized, pickLocalized } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
 
 export type SubscriptionPackage = {
@@ -29,6 +29,7 @@ type ApiSubscription = {
   price?: string | number | null;
   description?: string | null;
   description_ar?: string | null;
+  description_en?: string | null;
 };
 
 type ApiMemberSubscription = {
@@ -40,16 +41,16 @@ type ApiMemberSubscription = {
 };
 
 export function toPackage(item: ApiSubscription, locale: Locale): SubscriptionPackage {
-  const name = pickLocalized(locale, item.name_ar, item.name_en, item.name || "");
-  const description = item.description_ar || item.description || "";
+  const name = pairLocalized(item.name_ar, item.name_en || item.name);
+  const description = pairLocalized(item.description_ar, item.description_en || item.description);
   return {
     id: item.id,
-    name,
-    nameEn: item.name_en || item.name || name,
+    name: pickLocalized(locale, name.ar, name.en),
+    nameEn: name.en,
     durationMonths: Number(item.duration_months ?? 0),
     price: Number(item.price ?? 0),
-    description,
-    descriptionEn: item.description || description,
+    description: description.ar,
+    descriptionEn: description.en,
   };
 }
 
@@ -69,7 +70,12 @@ export async function getMemberSubscriptions(locale: Locale, token: string) {
   return asList<ApiMemberSubscription>(data).map((item) => ({
     id: item.id,
     status: item.status || "",
-    packageName: item.subscription?.name_ar || item.subscription?.name || "",
+    packageName: pickLocalized(
+      locale,
+      item.subscription?.name_ar,
+      item.subscription?.name_en,
+      item.subscription?.name || "",
+    ),
     expiresAt: item.expires_at || item.end_date,
   })) satisfies MemberSubscription[];
 }

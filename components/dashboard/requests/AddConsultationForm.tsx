@@ -15,7 +15,7 @@ import { DashboardSuccessModal } from "@/components/dashboard/events/DashboardSu
 import { ApiError } from "@/lib/api/client";
 import { getConsultantTypes } from "@/lib/api/catalog";
 import { createConsultation } from "@/lib/api/requests";
-import { pickLocalized } from "@/lib/api/localized";
+import { pickNamed } from "@/lib/api/localized";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -72,7 +72,7 @@ export function AddConsultationForm({
         setTypeOptions(
           items.map((item) => ({
             value: String(item.id),
-            label: pickLocalized(locale, item.name_ar, item.name_en, item.name || ""),
+            label: pickNamed(locale, item),
           })),
         ),
       )

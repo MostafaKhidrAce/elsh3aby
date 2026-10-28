@@ -23,18 +23,17 @@ import {
 import { ExcellencePraiseModal } from "@/components/dashboard/excellence/ExcellencePraiseModal";
 import { DashboardFetchState } from "@/components/dashboard/DashboardFetchState";
 import { ApiError } from "@/lib/api/client";
+import { getFamilyBranches, type FamilyBranch } from "@/lib/api/auth";
 import { getExcellenceTypes, type NamedType } from "@/lib/api/catalog";
 import {
   getExcellenceCommendations,
   getExcellenceMembers,
   sendExcellenceCommendation,
 } from "@/lib/api/excellence";
-import { pickLocalized } from "@/lib/api/localized";
+import { pairNamed, pickNamed } from "@/lib/api/localized";
 import { useAuth } from "@/lib/auth/auth-context";
 import {
   EXCELLENCE_AGE_GROUPS,
-  EXCELLENCE_BRANCHES,
-  EXCELLENCE_YEARS,
   type DummyExcellence,
 } from "@/lib/dashboard/dummy-excellence";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -58,6 +57,7 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
   const { token, isReady, user } = useAuth();
   const [category, setCategory] = useState("all");
   const [types, setTypes] = useState<NamedType[]>([]);
+  const [branches, setBranches] = useState<FamilyBranch[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -78,19 +78,29 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
     setLoading(true);
     setError(null);
     try {
-      const [liveTypes, result] = await Promise.all([
+      const [liveTypes, result, liveBranches] = await Promise.all([
         getExcellenceTypes(locale, token),
         getExcellenceMembers(locale, token, {
           search: query.trim() || undefined,
           type_id: category === "all" ? undefined : category,
           family_branch_id: filters.branch || undefined,
           age_category: filters.ageGroup || undefined,
-          year: filters.year || undefined,
+          year: filters.year ? filters.year.slice(0, 4) : undefined,
           per_page: 50,
         }),
+        getFamilyBranches(locale, token).catch(() => [] as FamilyBranch[]),
       ]);
+      const branchById = new Map(liveBranches.map((branch) => [branch.id, branch]));
       setTypes(liveTypes);
-      setItems(result.items);
+      setBranches(liveBranches);
+      setItems(
+        result.items.map((item) => {
+          const named = item.branchId ? branchById.get(item.branchId) : undefined;
+          if (!named) return item;
+          const pair = pairNamed(named);
+          return { ...item, branch: pair.ar, branchEn: pair.en };
+        }),
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : dictionary.common.loadError);
     } finally {
@@ -111,7 +121,7 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
     { id: "all", label: t.filterAll, icon: Briefcase },
     ...types.map((type) => ({
       id: String(type.id),
-      label: pickLocalized(locale, type.name_ar, type.name_en, type.name || ""),
+      label: pickNamed(locale, type),
       icon: Star,
     })),
   ];
@@ -122,26 +132,39 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
     seniors: t.ageSeniors,
   };
 
-  const branchOptions = EXCELLENCE_BRANCHES.map((value) => ({
-    value,
-    label: value,
-  }));
+  const branchOptions = useMemo(() => {
+    if (branches.length) {
+      return branches.map((item) => ({
+        value: String(item.id),
+        label: pickNamed(locale, item),
+      }));
+    }
+    const seen = new Map<string, string>();
+    for (const item of items) {
+      const value = item.branchId ? String(item.branchId) : locale === "ar" ? item.branch : item.branchEn;
+      const label = locale === "ar" ? item.branch : item.branchEn;
+      if (value && label) seen.set(value, label);
+    }
+    return Array.from(seen, ([value, label]) => ({ value, label }));
+  }, [branches, items, locale]);
   const ageOptions = EXCELLENCE_AGE_GROUPS.map((value) => ({
     value,
     label: ageLabels[value],
   }));
-  const yearOptions = EXCELLENCE_YEARS.map((value) => ({
-    value,
-    label: value,
-  }));
-
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return items.filter((item) => {
       if (category !== "all" && String(item.typeId) !== category) return false;
-      if (filters.branch && item.branch !== filters.branch) return false;
+      if (
+        filters.branch &&
+        String(item.branchId ?? "") !== filters.branch &&
+        item.branch !== filters.branch &&
+        item.branchEn !== filters.branch
+      ) {
+        return false;
+      }
       if (filters.ageGroup && item.ageGroup !== filters.ageGroup) return false;
-      if (filters.year && item.year !== filters.year) return false;
+      if (filters.year && item.year !== filters.year.slice(0, 4)) return false;
       if (!q) return true;
       return [item.name, item.nameEn, item.title, item.titleEn]
         .join(" ")
@@ -303,7 +326,8 @@ export function ExcellencePage({ locale, dictionary }: ExcellencePageProps) {
         showResultsLabel={t.showResults}
         branchOptions={branchOptions}
         ageOptions={ageOptions}
-        yearOptions={yearOptions}
+        weekdays={dictionary.dashboard.eventsPage.weekdays}
+        months={dictionary.dashboard.eventsPage.months}
         values={filters}
         onClose={() => setFilterOpen(false)}
         onApply={(next) => {

@@ -21,7 +21,7 @@ import { getFamilyBranches } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import { getEventTypes } from "@/lib/api/catalog";
 import { createEvent } from "@/lib/api/events";
-import { pickLocalized, toApiPhone } from "@/lib/api/localized";
+import { pickNamed, toApiPhone } from "@/lib/api/localized";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
@@ -87,7 +87,7 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
         setBranchOptions(
           items.map((item) => ({
             value: String(item.id),
-            label: pickLocalized(locale, item.name_ar, item.name_en),
+            label: pickNamed(locale, item),
           })),
         ),
       )
@@ -98,7 +98,7 @@ export function AddEventForm({ locale, dictionary }: AddEventFormProps) {
         setTypeOptions(
           items.map((item) => ({
             value: String(item.id),
-            label: pickLocalized(locale, item.name_ar, item.name_en, item.name || ""),
+            label: pickNamed(locale, item),
           })),
         ),
       )

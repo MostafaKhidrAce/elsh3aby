@@ -403,6 +403,10 @@
       "allSections": "كل الأقسام",
       "searchPlaceholder": "البحث عن فعالية",
       "filter": "تصفية",
+      "filterModalTitle": "تصفية حسب",
+      "filterType": "نوع المناسبة",
+      "filterBranch": "الفرع",
+      "showResults": "اظهر النتائج",
       "remind": "تذكير بالفعالية",
       "cancelRemind": "إلغاء تفعيل التذكير",
       "rateEvent": "تقييم الفعالية",
@@ -497,7 +501,15 @@
       "reviewComment": "مراجعة",
       "commentSuccessTitle": "تم نشر التعليق",
       "commentSuccessDescription": "شكراً لمشاركتك، لقد تم إرسال تعليقك بنجاح. سيتم مراجعته من قبل الإدارة ومن ثم نشره.",
-      "ok": "موافق"
+      "ok": "موافق",
+      "share": "مشاركة",
+      "shareTitle": "شارك هذا الخبر",
+      "shareWhatsapp": "واتساب",
+      "shareFacebook": "فيسبوك",
+      "shareX": "إكس",
+      "shareTelegram": "تيليجرام",
+      "copyLink": "نسخ الرابط",
+      "copied": "تم نسخ الرابط"
     },
     "excellencePage": {
       "title": "التميز العائلي",

@@ -9,6 +9,7 @@ import { asList } from "@/lib/api/catalog";
 import {
   extractImageUrls,
   pickLocalized,
+  pickNamed,
   resolveMedia,
 } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
@@ -49,7 +50,11 @@ export type ApiEvent = {
   description?: string | null;
   description_ar?: string | null;
   location_title?: string | null;
+  location_title_ar?: string | null;
+  location_title_en?: string | null;
   location_address?: string | null;
+  location_address_ar?: string | null;
+  location_address_en?: string | null;
   lat?: number | null;
   lng?: number | null;
   gallery?: unknown;
@@ -57,6 +62,7 @@ export type ApiEvent = {
   media_items?: unknown;
   type_id?: number | null;
   type?: { id?: number; name_ar?: string | null; name_en?: string | null; icon?: string | null } | null;
+  family_branch?: ApiBranch | null;
   branch?: ApiBranch | null;
   member?: ApiMemberRef | null;
 };
@@ -85,6 +91,7 @@ export type EventCardView = {
   hijriLabel: string;
   publisherName: string;
   publisherAvatar: string | null;
+  branchId?: number;
   branch?: string;
   images: string[];
   mapEmbedUrl?: string;
@@ -135,8 +142,18 @@ export function toEventCardView(event: ApiEvent, locale: Locale): EventCardView 
     typeIcon: event.type?.icon,
     title: pickLocalized(locale, event.full_name_ar, event.full_name),
     description: pickLocalized(locale, event.description_ar, event.description),
-    location: event.location_title || event.location_address || "",
-    address: event.location_address || event.location_title || "",
+    location: pickLocalized(
+      locale,
+      event.location_title_ar,
+      event.location_title_en,
+      event.location_title || event.location_address || "",
+    ),
+    address: pickLocalized(
+      locale,
+      event.location_address_ar,
+      event.location_address_en,
+      event.location_address || event.location_title || "",
+    ),
     time: formatTimeRange(event.time_from, event.time_to),
     dateKey: (event.date_from || "").slice(0, 10),
     hijriLabel: event.date_from_hijri_formatted || "",
@@ -144,12 +161,8 @@ export function toEventCardView(event: ApiEvent, locale: Locale): EventCardView 
     publisherAvatar: event.member?.image
       ? resolveMedia(event.member.image, FALLBACK_IMAGE)
       : null,
-    branch: pickLocalized(
-      locale,
-      event.branch?.name_ar,
-      event.branch?.name_en,
-      event.branch?.name || "",
-    ),
+    branchId: event.family_branch_id ?? event.family_branch?.id ?? event.branch?.id ?? undefined,
+    branch: pickNamed(locale, event.family_branch ?? event.branch),
     images: galleryUrls(event),
     mapEmbedUrl,
     ratingAverage: Number(event.rating_average ?? 0),

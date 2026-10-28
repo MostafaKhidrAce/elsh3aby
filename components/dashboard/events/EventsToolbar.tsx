@@ -8,6 +8,8 @@ type EventsToolbarProps = {
   filterLabel: string;
   searchQuery: string;
   onSearchChange: (value: string) => void;
+  filterActive?: boolean;
+  onFilterClick: () => void;
 };
 
 export function EventsToolbar({
@@ -16,6 +18,8 @@ export function EventsToolbar({
   filterLabel,
   searchQuery,
   onSearchChange,
+  filterActive,
+  onFilterClick,
 }: EventsToolbarProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -41,7 +45,10 @@ export function EventsToolbar({
 
         <button
           type="button"
-          className="inline-flex shrink-0 items-center justify-center gap-2 rounded-[14px] border border-[#E8E8E8] bg-white px-4 py-2.5 text-sm font-semibold text-[#133D3C] transition hover:border-[#D5AF34]/50"
+          onClick={onFilterClick}
+          className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-[14px] border bg-white px-4 py-2.5 text-sm font-semibold text-[#133D3C] transition hover:border-[#D5AF34]/50 ${
+            filterActive ? "border-[#D5AF34]" : "border-[#E8E8E8]"
+          }`}
         >
           <Filter className="h-4 w-4 text-[#133D3C]" strokeWidth={2} />
           {filterLabel}

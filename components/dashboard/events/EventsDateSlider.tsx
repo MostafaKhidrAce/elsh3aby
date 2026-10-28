@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { parseDateKey } from "@/lib/dashboard/dummy-events";
+import { hijriDay } from "@/lib/hijri";
 import type { Locale } from "@/lib/i18n/config";
 
 type EventsDateSliderProps = {
@@ -102,7 +103,7 @@ export function EventsDateSlider({
                 {weekdayLabel(date, weekdays)}
               </span>
               <span className="text-[18px] font-bold leading-none">
-                {date.getDate()}
+                {hijriDay(date)}
               </span>
             </button>
           );

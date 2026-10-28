@@ -1,5 +1,15 @@
 import type { Locale } from "@/lib/i18n/config";
 
+export type NamedRecord = {
+  id?: number | null;
+  name?: string | null;
+  name_ar?: string | null;
+  name_en?: string | null;
+  title?: string | null;
+  title_ar?: string | null;
+  title_en?: string | null;
+};
+
 export function pickLocalized(
   locale: Locale,
   ar?: string | null,
@@ -9,6 +19,48 @@ export function pickLocalized(
   const preferred = locale === "en" ? en : ar;
   const alternate = locale === "en" ? ar : en;
   return (preferred || alternate || fallback).trim();
+}
+
+export function pairLocalized(
+  ar?: string | null,
+  en?: string | null,
+  fallback = "",
+): { ar: string; en: string } {
+  const arabic = (ar || en || fallback).trim();
+  const english = (en || ar || fallback).trim();
+  return { ar: arabic, en: english };
+}
+
+export function pairNamed(
+  named?: NamedRecord | null,
+  fallback = "",
+): { ar: string; en: string } {
+  if (!named) return pairLocalized(null, null, fallback);
+  return pairLocalized(
+    named.name_ar || named.title_ar,
+    named.name_en || named.title_en,
+    named.name || named.title || fallback,
+  );
+}
+
+export function pickNamed(
+  locale: Locale,
+  named?: NamedRecord | null,
+  fallback = "",
+): string {
+  const pair = pairNamed(named, fallback);
+  return locale === "en" ? pair.en : pair.ar;
+}
+
+export function pairFromUnknown(
+  value: unknown,
+  fallback = "",
+): { ar: string; en: string } {
+  if (typeof value === "string") return pairLocalized(value, value, fallback);
+  if (value && typeof value === "object") {
+    return pairNamed(value as NamedRecord, fallback);
+  }
+  return pairLocalized(null, null, fallback);
 }
 
 export function parseStatNumber(value: unknown): number {

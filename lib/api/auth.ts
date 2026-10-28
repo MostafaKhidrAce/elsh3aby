@@ -1,4 +1,5 @@
-import { ApiError, apiGet, apiPost, apiPostForm } from "@/lib/api/client";
+import { ApiError, apiGet, apiGetRaw, apiPost, apiPostForm } from "@/lib/api/client";
+import { asList } from "@/lib/api/catalog";
 import type { Locale } from "@/lib/i18n/config";
 import type { AuthUser } from "@/lib/auth/token";
 
@@ -106,8 +107,13 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-export async function getFamilyBranches(locale?: Locale) {
-  return apiGet<FamilyBranch[]>("/family-branches", locale);
+export async function getFamilyBranches(locale?: Locale, token?: string | null) {
+  const json = await apiGetRaw<Record<string, unknown>>(
+    "/family-branches",
+    locale,
+    token,
+  );
+  return asList<FamilyBranch>(json.data ?? json);
 }
 
 export async function loginMember(

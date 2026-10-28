@@ -25,7 +25,7 @@ import {
   checkBookingAvailability,
   createPlaceBooking,
 } from "@/lib/api/bookings";
-import { pickLocalized, toApiPhone } from "@/lib/api/localized";
+import { pickNamed, toApiPhone } from "@/lib/api/localized";
 import { useAuth } from "@/lib/auth/auth-context";
 import { BOOKING_PRICE } from "@/lib/dashboard/dummy-venue-bookings";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -149,7 +149,7 @@ export function NewBookingForm({ locale, dictionary }: NewBookingFormProps) {
     void getBookingTypes(locale, token).then((items) => {
       const options = items.map((item) => ({
         value: String(item.id),
-        label: pickLocalized(locale, item.name_ar, item.name_en, item.name || ""),
+        label: pickNamed(locale, item),
       }));
       setTypeOptions(options);
       setEventType((current) => current ?? options[0] ?? null);

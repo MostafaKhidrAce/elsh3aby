@@ -1,6 +1,6 @@
 import { apiGet, apiGetPage, apiPost, type ApiQuery } from "@/lib/api/client";
 import { asList } from "@/lib/api/catalog";
-import { extractImageUrls, pickLocalized, resolveMedia } from "@/lib/api/localized";
+import { extractImageUrls, pairFromUnknown, pairLocalized, resolveMedia } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
 import type { MarketProduct } from "@/lib/dashboard/dummy-market";
 
@@ -8,13 +8,17 @@ type ApiProduct = {
   id: number;
   title?: string | null;
   title_ar?: string | null;
+  title_en?: string | null;
   description?: string | null;
   description_ar?: string | null;
+  description_en?: string | null;
   price?: string | number | null;
   image_url?: string | null;
   image?: string | null;
-  category?: string | null;
+  category?: string | { name?: string | null; name_ar?: string | null; name_en?: string | null } | null;
   category_label?: string | null;
+  category_label_ar?: string | null;
+  category_label_en?: string | null;
   gallery?: unknown;
 };
 
@@ -48,25 +52,26 @@ type ApiOrder = {
 
 const FALLBACK = "/placeholder/user-placeholder-img.svg";
 
-export function toMarketProduct(item: ApiProduct, locale: Locale): MarketProduct {
+export function toMarketProduct(item: ApiProduct, _locale: Locale): MarketProduct {
   const images = extractImageUrls(item.gallery ?? item.image_url ?? item.image).map((url) =>
     resolveMedia(url, FALLBACK),
   );
-  const titleAr = item.title_ar || item.title || "";
-  const titleEn = item.title || titleAr;
-  const descriptionAr = item.description_ar || item.description || "";
-  const descriptionEn = item.description || descriptionAr;
-  const category = item.category_label || item.category || "";
+  const title = pairLocalized(item.title_ar, item.title_en || item.title);
+  const description = pairLocalized(item.description_ar, item.description_en || item.description);
+  const category = pairFromUnknown(
+    item.category,
+    item.category_label_ar || item.category_label_en || item.category_label || "",
+  );
   return {
     id: String(item.id),
-    title: titleAr,
-    titleEn,
-    shortDescription: descriptionAr.slice(0, 80),
-    shortDescriptionEn: descriptionEn.slice(0, 80),
-    description: descriptionAr,
-    descriptionEn,
-    category,
-    categoryEn: category,
+    title: title.ar,
+    titleEn: title.en,
+    shortDescription: description.ar.slice(0, 80),
+    shortDescriptionEn: description.en.slice(0, 80),
+    description: description.ar,
+    descriptionEn: description.en,
+    category: category.ar || item.category_label || "",
+    categoryEn: category.en || item.category_label || category.ar,
     price: Number(item.price ?? 0),
     images: images.length ? images : [FALLBACK],
   };
