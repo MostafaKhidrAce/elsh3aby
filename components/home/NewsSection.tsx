@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useLoginRequired } from "@/components/auth/RouteGuard";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -42,16 +43,19 @@ export function NewsSection({
   cards,
 }: NewsSectionProps) {
   const isAr = locale === "ar";
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { openLoginRequired } = useLoginRequired();
   const visibleCount = useVisibleCount();
   const [index, setIndex] = useState(0);
   const maxIndex = Math.max(0, cards.length - visibleCount);
 
-  function handleCardClick() {
+  function handleCardClick(id: string | number) {
     if (!isAuthenticated) {
       openLoginRequired();
+      return;
     }
+    router.push(`/${locale}/dashboard/news/${id}`);
   }
 
   useEffect(() => {
@@ -170,7 +174,7 @@ export function NewsSection({
                   <button
                     type="button"
                     dir="ltr"
-                    onClick={handleCardClick}
+                    onClick={() => handleCardClick(card.id)}
                     className="flex w-full flex-col gap-3 rounded-[20px] px-3 py-3 text-start backdrop-blur-md sm:gap-4 sm:px-4 sm:py-4"
                     style={{ backgroundColor: "rgba(0, 0, 0, 0.22)" }}
                   >
