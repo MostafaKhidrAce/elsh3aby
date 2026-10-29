@@ -129,6 +129,7 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
 
   async function handleSubscribe(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!data) return;
     const form = event.currentTarget;
     const email = String(new FormData(form).get("email") ?? "");
     setStatus("loading");
