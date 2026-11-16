@@ -13,6 +13,7 @@ import {
   resolveMedia,
 } from "@/lib/api/localized";
 import type { Locale } from "@/lib/i18n/config";
+import { isShortLine, samePersonName } from "@/lib/api/event-display";
 
 export type ApiBranch = {
   id?: number | null;
@@ -135,13 +136,18 @@ export function toEventCardView(event: ApiEvent, locale: Locale): EventCardView 
     typeof lat === "number" && typeof lng === "number"
       ? `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`
       : undefined;
+  const fullName = pickLocalized(locale, event.full_name_ar, event.full_name);
+  const description = pickLocalized(locale, event.description_ar, event.description);
+  const memberName = event.member?.name?.trim() || "";
+  const bookedNameIsTitle =
+    samePersonName(fullName, memberName) && isShortLine(description);
   return {
     id: event.id,
     typeId: event.type_id ?? event.type?.id ?? 0,
     typeName: pickLocalized(locale, event.type?.name_ar, event.type?.name_en),
     typeIcon: event.type?.icon,
-    title: pickLocalized(locale, event.full_name_ar, event.full_name),
-    description: pickLocalized(locale, event.description_ar, event.description),
+    title: bookedNameIsTitle ? description : fullName,
+    description: bookedNameIsTitle ? "" : description,
     location: pickLocalized(
       locale,
       event.location_title_ar,
@@ -157,7 +163,7 @@ export function toEventCardView(event: ApiEvent, locale: Locale): EventCardView 
     time: formatTimeRange(event.time_from, event.time_to),
     dateKey: (event.date_from || "").slice(0, 10),
     hijriLabel: event.date_from_hijri_formatted || "",
-    publisherName: event.member?.name || pickLocalized(locale, event.full_name_ar, event.full_name),
+    publisherName: memberName || fullName,
     publisherAvatar: event.member?.image
       ? resolveMedia(event.member.image, FALLBACK_IMAGE)
       : null,

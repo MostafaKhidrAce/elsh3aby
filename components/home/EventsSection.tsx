@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Calendar, MapPin } from "lucide-react";
-import { useLoginRequired } from "@/components/auth/RouteGuard";
-import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 import type { EventCardView } from "@/lib/api/website-view";
@@ -13,7 +12,6 @@ type EventsSectionProps = {
   dictionary: Dictionary;
   title: string;
   description: string;
-  cta: string;
   events: EventCardView[];
 };
 
@@ -22,14 +20,10 @@ export function EventsSection({
   dictionary,
   title,
   description,
-  cta,
   events,
 }: EventsSectionProps) {
   const t = dictionary.home.eventsSection;
   const isAr = locale === "ar";
-  const { isAuthenticated } = useAuth();
-  const { openLoginRequired } = useLoginRequired();
-
   return (
     <section
       id="events-section"
@@ -45,11 +39,9 @@ export function EventsSection({
             {description}
           </p>
 
-          {!isAuthenticated ? (
-            <button
-              type="button"
+          <Link
+              href={`/${locale}/home/events`}
               dir="ltr"
-              onClick={openLoginRequired}
               className="mt-6 inline-flex w-fit items-center justify-center gap-2 rounded-md bg-gold px-4 py-2.5 text-[15px] font-medium text-[#133D3C] transition hover:brightness-105 sm:mt-7 sm:text-[17px] lg:mt-8 lg:px-5 lg:py-3 lg:text-[20px]"
             >
               {isAr ? (
@@ -61,11 +53,11 @@ export function EventsSection({
                     height={16}
                     className="h-4 w-4"
                   />
-                  <span>{cta}</span>
+                  <span>{t.viewAll}</span>
                 </>
               ) : (
                 <>
-                  <span>{cta}</span>
+                  <span>{t.viewAll}</span>
                   <Image
                     src="/arrows/green-left-arrow.svg"
                     alt=""
@@ -75,8 +67,7 @@ export function EventsSection({
                   />
                 </>
               )}
-            </button>
-          ) : null}
+          </Link>
         </div>
 
         <div className="flex flex-col">
@@ -92,8 +83,8 @@ export function EventsSection({
                 index < events.length - 1 ? "border-b border-white/15" : ""
               }`}
             >
-              <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[10px] bg-white/10 sm:w-[200px] lg:w-[240px]">
-                {event.imageUrl ? (
+              {event.imageUrl ? (
+                <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden rounded-[10px] bg-white/10 sm:w-[200px] lg:w-[240px]">
                   <Image
                     src={event.imageUrl}
                     alt={event.title}
@@ -101,13 +92,15 @@ export function EventsSection({
                     className="object-cover"
                     sizes="(max-width: 640px) 100vw, 240px"
                   />
-                ) : null}
-              </div>
+                </div>
+              ) : null}
 
               <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5 px-1 py-1 sm:gap-3 sm:px-3 sm:py-3">
                 <div>
                   <h3 className="text-[17px] font-bold leading-snug sm:text-[18px] lg:text-[20px]">
-                    {event.title}
+                    <Link href={`/${locale}/home/events/${event.id}`} className="hover:underline">
+                      {event.title}
+                    </Link>
                   </h3>
                   <p className="mt-1.5 line-clamp-2 text-[14px] font-medium leading-6 text-white/80 sm:mt-2 sm:text-[15px] sm:leading-7 lg:text-[16px]">
                     {event.description}

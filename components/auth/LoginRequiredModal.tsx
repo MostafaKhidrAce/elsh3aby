@@ -8,6 +8,7 @@ type LoginRequiredModalProps = {
   title: string;
   description: string;
   loginLabel: string;
+  nextPath?: string;
   dismissible?: boolean;
   onClose?: () => void;
 };
@@ -19,9 +20,13 @@ export function LoginRequiredModal({
   title,
   description,
   loginLabel,
+  nextPath,
   dismissible = false,
   onClose,
 }: LoginRequiredModalProps) {
+  const loginHref = nextPath
+    ? `/${locale}/login?next=${encodeURIComponent(nextPath)}`
+    : `/${locale}/login`;
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1F2428]/65 p-4 backdrop-blur-md sm:p-6"
@@ -57,7 +62,7 @@ export function LoginRequiredModal({
         </p>
 
         <Link
-          href={`/${locale}/login`}
+          href={loginHref}
           className="mt-8 inline-flex h-[50px] w-full items-center justify-center rounded-full bg-[#D5AF34] text-[16px] font-bold text-[#141414] transition hover:brightness-105 sm:mt-9 sm:h-[54px] sm:text-[17px]"
           onClick={onClose}
         >

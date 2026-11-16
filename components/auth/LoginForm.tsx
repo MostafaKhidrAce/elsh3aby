@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { FormEvent, useState } from "react";
 import { Lock, Mail } from "lucide-react";
 import { AuthFormShell } from "@/components/auth/AuthFormShell";
@@ -13,6 +13,7 @@ import {
   toAuthUser,
 } from "@/lib/api/auth";
 import { useAuth } from "@/lib/auth/auth-context";
+import { safeReturnPath } from "@/lib/auth/return-path";
 import type { Locale } from "@/lib/i18n/config";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 
@@ -37,6 +38,7 @@ const inputStyle = {
 export function LoginForm({ dictionary }: LoginFormProps) {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";
   const { login } = useAuth();
@@ -66,7 +68,7 @@ export function LoginForm({ dictionary }: LoginFormProps) {
         }),
         token,
       );
-      router.push(`/${locale}/home`);
+      router.push(safeReturnPath(locale, searchParams.get("next")) ?? `/${locale}/home`);
     } catch (err) {
       setError(getApiErrorMessage(err, t.errorGeneric));
     } finally {

@@ -9,7 +9,7 @@ type AuthFormShellProps = {
 };
 
 const TEXT = "#170F49";
-const AUTH_BG = "/backgrounds/auth-bg.svg";
+const OFFICIAL_LOGO = "/logos/official-logo.svg";
 
 export function AuthFormShell({
   locale,
@@ -25,13 +25,15 @@ export function AuthFormShell({
         className="grid min-h-dvh w-full grid-cols-1 lg:grid-cols-2"
         dir="ltr"
       >
-        <aside className="relative m-3 min-h-[220px] overflow-hidden rounded-[20px] sm:m-4 sm:min-h-[280px] lg:m-5 lg:min-h-[calc(100dvh-2.5rem)]">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={AUTH_BG}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-center"
-          />
+        <aside className="relative m-3 flex min-h-[340px] items-center justify-center overflow-hidden rounded-[20px] bg-[radial-gradient(ellipse_at_center,#145452_0%,#002827_100%)] p-6 sm:m-4 sm:min-h-[460px] sm:p-10 lg:m-5 lg:min-h-[calc(100dvh-2.5rem)]">
+          <div className="flex w-full max-w-[220px] items-center justify-center rounded-[28px] bg-white px-5 py-6 shadow-[0_18px_48px_rgba(0,0,0,0.28)] sm:max-w-[280px] sm:px-7 sm:py-8">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={OFFICIAL_LOGO}
+              alt="عائلة الشعيبي بالأَحساء"
+              className="h-auto w-full"
+            />
+          </div>
         </aside>
 
         <div

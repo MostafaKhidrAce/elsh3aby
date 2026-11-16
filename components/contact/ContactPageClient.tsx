@@ -56,21 +56,18 @@ export function ContactPageClient({ locale, dictionary }: ContactPageClientProps
         backgroundUrl={contact?.hero?.background_url}
       />
 
-      <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
+      <section className="mt-2 rounded-[20px] bg-white px-3 py-8 sm:mt-3 sm:px-6 sm:py-12 md:mt-4 lg:mt-6 lg:px-10 lg:py-14">
         <ContactInfoSection
           locale={locale}
           dictionary={dictionary}
           data={info}
         />
-      </div>
-
-      <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
         <ContactFormSection
           locale={locale}
           dictionary={dictionary}
           data={form}
         />
-      </div>
+      </section>
     </div>
   );
 }

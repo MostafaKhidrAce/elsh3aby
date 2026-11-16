@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { notFound } from "next/navigation";
 import { isLocale } from "@/lib/i18n/config";
@@ -12,5 +13,9 @@ export default async function LoginPage({
   if (!isLocale(localeParam)) notFound();
   const dictionary = await getDictionary(localeParam);
 
-  return <LoginForm dictionary={dictionary} />;
+  return (
+    <Suspense fallback={null}>
+      <LoginForm dictionary={dictionary} />
+    </Suspense>
+  );
 }

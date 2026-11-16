@@ -1,4 +1,5 @@
-import { apiGet, ApiError, apiPost } from "@/lib/api/client";
+import { apiGet, apiGetPage, ApiError, apiPost, type ApiMeta, type ApiQuery } from "@/lib/api/client";
+import { asList } from "@/lib/api/catalog";
 import type { Locale } from "@/lib/i18n/config";
 
 export type LocalizedCta = {
@@ -11,10 +12,18 @@ export type WebsiteStatItem = {
   id: number;
   label_ar?: string | null;
   label_en?: string | null;
-  number?: number | null;
+  number?: number | string | null;
   value_ar?: string | null;
   value_en?: string | null;
   icon_url?: string | null;
+};
+
+export type WebsiteHeroSlide = {
+  background_url?: string | null;
+  title_ar?: string | null;
+  title_en?: string | null;
+  description_ar?: string | null;
+  description_en?: string | null;
 };
 
 export type WebsiteServiceItem = {
@@ -106,6 +115,7 @@ export type WebsiteFooter = {
 
 export type WebsiteHomeData = {
   hero?: {
+    slides?: WebsiteHeroSlide[] | null;
     background_url?: string | string[] | null;
     title_ar?: string | null;
     title_en?: string | null;
@@ -234,6 +244,7 @@ export type WebsiteContactData = {
     phone?: string | null;
     address_ar?: string | null;
     address_en?: string | null;
+    map_embed_url?: string | null;
   } | null;
   map_embed_url?: string | null;
   footer?: WebsiteFooter | null;
@@ -336,4 +347,83 @@ export async function submitContactMessage(
   if (payload.email) body.email = payload.email;
 
   return apiPost("/contact", body, locale);
+}
+
+export type PublicListQuery = {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  type_id?: string | number;
+  date?: string;
+  scope?: string;
+  branch?: string | number;
+};
+
+export type PublicListResult<T> = {
+  items: T[];
+  meta: ApiMeta | null;
+  unavailable: boolean;
+};
+
+function listMeta(meta: ApiMeta | undefined, data: unknown): ApiMeta | null {
+  if (meta?.current_page || meta?.last_page || meta?.total) return meta;
+  if (!data || typeof data !== "object" || Array.isArray(data)) return meta ?? null;
+  const record = data as Record<string, unknown>;
+  const nested = record.meta;
+  if (nested && typeof nested === "object") return nested as ApiMeta;
+  if (typeof record.current_page === "number" || typeof record.last_page === "number") {
+    return {
+      current_page: typeof record.current_page === "number" ? record.current_page : undefined,
+      last_page: typeof record.last_page === "number" ? record.last_page : undefined,
+      per_page: typeof record.per_page === "number" ? record.per_page : undefined,
+      total: typeof record.total === "number" ? record.total : undefined,
+    };
+  }
+  return meta ?? null;
+}
+
+async function getPublicList<T>(
+  path: string,
+  locale: Locale,
+  query: PublicListQuery,
+): Promise<PublicListResult<T>> {
+  const params: ApiQuery = {
+    page: query.page ?? 1,
+    per_page: query.per_page ?? 9,
+    search: query.search,
+    type_id: query.type_id,
+    date: query.date,
+    scope: query.scope,
+    branch: query.branch,
+  };
+  try {
+    const page = await apiGetPage<unknown>(path, locale, null, params);
+    return {
+      items: asList<T>(page.data),
+      meta: listMeta(page.meta, page.data),
+      unavailable: false,
+    };
+  } catch (error) {
+    if (error instanceof ApiError && (error.status === 404 || error.status === 401)) {
+      return { items: [], meta: null, unavailable: true };
+    }
+    console.error(`Failed to fetch ${path}`, error);
+    return { items: [], meta: null, unavailable: true };
+  }
+}
+
+export function getPublicNews(locale: Locale, query: PublicListQuery = {}) {
+  return getPublicList<WebsiteNewsItem>("/website/news", locale, query);
+}
+
+export function getPublicNewsItem(locale: Locale, id: string | number) {
+  return safeGet<WebsiteNewsItem>(`/website/news/${id}`, locale);
+}
+
+export function getPublicEvents(locale: Locale, query: PublicListQuery = {}) {
+  return getPublicList<WebsiteEventItem>("/website/events", locale, query);
+}
+
+export function getPublicEvent(locale: Locale, id: string | number) {
+  return safeGet<WebsiteEventItem>(`/website/events/${id}`, locale);
 }

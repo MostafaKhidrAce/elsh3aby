@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { notFound } from "next/navigation";
 import { RouteGuard } from "@/components/auth/RouteGuard";
@@ -36,6 +37,24 @@ const expoArabic = localFont({
   variable: "--font-expo-arabic",
   display: "swap",
 });
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (locale === "en") {
+    return {
+      title: { absolute: "Al-Shuaibi Family in Al-Ahsa" },
+      description: "Al-Shuaibi Family in Al-Ahsa",
+    };
+  }
+  return {
+    title: { absolute: "عائلة الشعيبي بالأَحساء" },
+    description: "عائلة الشعيبي بالأَحساء",
+  };
+}
 
 export function generateStaticParams() {
   return [{ locale: "ar" }, { locale: "en" }];

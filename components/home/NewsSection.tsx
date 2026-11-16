@@ -1,10 +1,9 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { useLoginRequired } from "@/components/auth/RouteGuard";
-import { useAuth } from "@/lib/auth/auth-context";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { Locale } from "@/lib/i18n/config";
 import type { NewsCardView } from "@/lib/api/website-view";
@@ -37,6 +36,7 @@ function useVisibleCount() {
 
 export function NewsSection({
   locale,
+  dictionary,
   eyebrow,
   title,
   description,
@@ -44,18 +44,12 @@ export function NewsSection({
 }: NewsSectionProps) {
   const isAr = locale === "ar";
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
-  const { openLoginRequired } = useLoginRequired();
   const visibleCount = useVisibleCount();
   const [index, setIndex] = useState(0);
   const maxIndex = Math.max(0, cards.length - visibleCount);
 
   function handleCardClick(id: string | number) {
-    if (!isAuthenticated) {
-      openLoginRequired();
-      return;
-    }
-    router.push(`/${locale}/dashboard/news/${id}`);
+    router.push(`/${locale}/home/news/${id}`);
   }
 
   useEffect(() => {
@@ -103,6 +97,14 @@ export function NewsSection({
           >
             {description}
           </p>
+          {dictionary ? (
+            <Link
+              href={`/${locale}/home/news`}
+              className="mt-5 inline-flex rounded-md bg-[#133D3C] px-5 py-2.5 text-sm font-semibold text-white"
+            >
+              {dictionary.home.newsSection.viewAll}
+            </Link>
+          ) : null}
         </div>
 
         <div

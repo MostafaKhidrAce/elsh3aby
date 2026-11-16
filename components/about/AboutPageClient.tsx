@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AboutFaqSection } from "@/components/about/AboutFaqSection";
 import { AboutGoalsSection } from "@/components/about/AboutGoalsSection";
@@ -85,6 +86,20 @@ export function AboutPageClient({ locale, dictionary }: AboutPageClientProps) {
           dictionary={dictionary}
           data={goals}
         />
+      </div>
+      <div className="mt-4 flex flex-wrap justify-center gap-3 px-3">
+        <Link
+          href={`/${locale}/home/mission`}
+          className="rounded-md bg-[#133D3C] px-5 py-3 text-sm font-semibold text-white"
+        >
+          {dictionary.publicPages.missionLink}
+        </Link>
+        <Link
+          href={`/${locale}/home/goals`}
+          className="rounded-md border border-[#133D3C] px-5 py-3 text-sm font-semibold text-[#133D3C]"
+        >
+          {dictionary.publicPages.goalsLink}
+        </Link>
       </div>
       <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
         <AboutFaqSection data={faq} />

@@ -1,6 +1,14 @@
 import type { Locale } from "@/lib/i18n/config";
 
-const PUBLIC_PATHS = ["/home", "/home/contact-us", "/home/about"] as const;
+const PUBLIC_PATHS = [
+  "/home",
+  "/home/contact-us",
+  "/home/about",
+  "/home/mission",
+  "/home/goals",
+] as const;
+
+const PUBLIC_PREFIXES = ["/home/news", "/home/events"] as const;
 
 const AUTH_PREFIXES = [
   "/login",
@@ -26,7 +34,10 @@ function normalizePath(path: string): string {
 
 export function isPublicRoute(pathname: string, locale: Locale): boolean {
   const path = normalizePath(stripLocale(pathname, locale));
-  return PUBLIC_PATHS.some((publicPath) => path === publicPath);
+  if (PUBLIC_PATHS.some((publicPath) => path === publicPath)) return true;
+  return PUBLIC_PREFIXES.some(
+    (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+  );
 }
 
 export function isAuthRoute(pathname: string, locale: Locale): boolean {

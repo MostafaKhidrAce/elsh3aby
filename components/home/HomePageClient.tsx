@@ -60,7 +60,7 @@ export function HomePageClient({ locale, dictionary }: HomePageClientProps) {
   return (
     <div className="bg-white p-2 sm:p-3 md:p-4 lg:p-6">
       <HomeHero locale={locale} dictionary={dictionary} data={hero} />
-      <div id="after-hero" className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
+      <div id="after-hero" className="mt-2 scroll-mt-4 sm:mt-3 md:mt-4 lg:mt-6">
         <AboutSection locale={locale} dictionary={dictionary} data={about} />
       </div>
       <div className="mt-2 sm:mt-3 md:mt-4 lg:mt-6">
@@ -77,7 +77,6 @@ export function HomePageClient({ locale, dictionary }: HomePageClientProps) {
           dictionary={dictionary}
           title={events.title}
           description={events.description}
-          cta={events.cta}
           events={events.events}
         />
       </div>

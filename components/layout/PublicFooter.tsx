@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState, type ReactNode } from "react";
 import { Mail, MapPin, Phone, Send } from "lucide-react";
@@ -9,7 +8,6 @@ import type { Locale } from "@/lib/i18n/config";
 import type { FooterView } from "@/lib/api/website-view";
 import { getWebsiteFooter, subscribeNewsletter } from "@/lib/api/website";
 import { toFooterView } from "@/lib/api/website-view";
-import { websiteContactHref } from "@/lib/api/website-routes";
 
 type PublicFooterProps = {
   locale: Locale;
@@ -148,41 +146,9 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
         style={{ backgroundColor: "#133D3C" }}
       >
         <div className="mx-auto w-full max-w-7xl xl:max-w-[1400px]">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            <h2 className="text-[22px] font-bold leading-tight sm:text-[28px] md:text-[32px] lg:text-[42px]">
-              {data.title}
-            </h2>
-            <Link
-              href={websiteContactHref(locale)}
-              dir="ltr"
-              className="inline-flex w-fit shrink-0 items-center justify-center gap-2 rounded-md px-4 py-2.5 text-[14px] font-medium text-[#133D3C] transition hover:brightness-105 lg:px-5 lg:py-3 lg:text-[16px]"
-              style={{ backgroundColor: "#D5AF34" }}
-            >
-              {isAr ? (
-                <>
-                  <Image
-                    src="/arrows/green-left-arrow.svg"
-                    alt=""
-                    width={16}
-                    height={16}
-                    className="h-4 w-4"
-                  />
-                  <span>{data.contactCta}</span>
-                </>
-              ) : (
-                <>
-                  <span>{data.contactCta}</span>
-                  <Image
-                    src="/arrows/green-left-arrow.svg"
-                    alt=""
-                    width={16}
-                    height={16}
-                    className="h-4 w-4 -scale-x-100"
-                  />
-                </>
-              )}
-            </Link>
-          </div>
+          <h2 className="text-[22px] font-bold leading-tight sm:text-[28px] md:text-[32px] lg:text-[42px]">
+            {data.title}
+          </h2>
 
           <div className="my-6 h-px w-full bg-white/30 sm:my-8 lg:my-12" />
 
@@ -344,6 +310,14 @@ export function PublicFooter({ locale, dictionary }: PublicFooterProps) {
             <p className="text-[13px] font-normal text-white/70 sm:text-[14px]">
               {data.copyright}
             </p>
+            <a
+              href={t.registrationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex text-[13px] font-medium text-white/90 underline-offset-4 hover:underline sm:text-[14px]"
+            >
+              {t.registrationLabel}: {t.registrationNumber}
+            </a>
           </div>
         </div>
       </div>

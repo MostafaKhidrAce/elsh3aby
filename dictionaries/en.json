@@ -1,8 +1,8 @@
 {
   "brand": {
     "name": "أسرة الشعيبي بالأحساء",
-    "nameEn": "AL-Shuaibi Family in Al-Ahsa",
-    "shortName": "Elsh3aby"
+    "nameEn": "Al-Shuaibi Family in Al-Ahsa",
+    "shortName": "Al-Shuaibi"
   },
   "nav": {
     "home": "Home",
@@ -35,8 +35,13 @@
       "news": "Family news",
       "events": "Events and occasions",
       "store": "Al-Qaisariyah market",
-      "booking": "Book the family events hall"
+      "booking": "Book the family events hall",
+      "mission": "Fund mission",
+      "goals": "Fund goals"
     },
+    "registrationLabel": "Fund registration number at the National Center for Non-Profit Sector",
+    "registrationNumber": "1200758100",
+    "registrationUrl": "https://kayan.ncnp.gov.sa/establishment/objections/family-fund/0da16e40-2f9f-b221-cd79-3a1bf123db29/1120",
     "contactTitle": "Contact information",
     "phoneLabel": "Mobile number",
     "phone": "966198704300",
@@ -44,6 +49,41 @@
     "email": "familybox@gmail.com",
     "rights": "All rights reserved © 2026 Aks Information Technology & Marketing",
     "family": "Al-Shuaibi Family in Al-Ahsa"
+  },
+  "publicPages": {
+    "newsTitle": "News",
+    "eventsTitle": "Events",
+    "searchLabel": "Search",
+    "searchPlaceholder": "Search the list",
+    "search": "Search",
+    "scopeLabel": "Scope",
+    "scopeAll": "All",
+    "scopeUpcoming": "Upcoming",
+    "scopePast": "Past",
+    "dateLabel": "Date",
+    "empty": "No matching results.",
+    "unavailable": "The full public list is not available from the server right now.",
+    "previous": "Previous",
+    "next": "Next",
+    "bookedBy": "Booked by",
+    "backToNews": "Back to news",
+    "backToEvents": "Back to events",
+    "viewAllNews": "View all news",
+    "viewAllEvents": "View all events",
+    "missionTitle": "Fund mission",
+    "missionBody": "Strengthen solidarity and bonds among members of the Al-Shuaibi family in Al-Ahsa by providing social support, empowering family members, developing the family's resources, and advancing initiatives and services that contribute to stability and prosperity, while preserving the family's legacy and values for future generations.",
+    "goalsTitle": "Fund goals",
+    "goals": [
+      "Strengthen kinship ties",
+      "Spread the spirit of solidarity",
+      "Foster harmony and compassion among family members",
+      "Reconcile disputes",
+      "Cooperate in righteousness and piety",
+      "Help organize charitable giving among family members",
+      "Contribute to the education, training, and development of family members"
+    ],
+    "missionLink": "Fund mission",
+    "goalsLink": "Fund goals"
   },
   "home": {
     "title": "Welcome to the digital platform of the Al-Shuaibi Family in Al-Ahsa",
@@ -71,6 +111,7 @@
       "title": "Platform services",
       "subtitle": "Explore family services",
       "description": "An integrated portal that meets the family's aspirations, supports its excellence, documents its achievements, and enables you to manage your affairs and participate actively in all activities",
+      "suggestionsDescription": "A space where family members share ideas and suggestions to improve services and initiatives, reviewed for the benefit and stability of the family.",
       "viewMore": "View more",
       "cards": [
         {
@@ -103,6 +144,7 @@
       "title": "Events and occasions",
       "description": "Stay up to date with upcoming events, celebrations, and meetings held throughout the year.",
       "loginCta": "Log in for more details",
+      "viewAll": "View all events",
       "empty": "There are no published events right now.",
       "events": [
         {
@@ -129,6 +171,7 @@
       "title": "Family news",
       "subtitle": "Family news and announcements",
       "description": "Follow the latest family updates, official announcements, and community initiatives as they happen.",
+      "viewAll": "View all news",
       "cards": [
         {
           "title": "Annual family gathering",
@@ -242,8 +285,8 @@
         }
       ]
     },
-    "subtitle": "The story of the Elsh3aby family and our shared vision.",
-    "body": "Elsh3aby is a family community that brings relatives and friends together in one place to follow news, occasions, and shared memories. We aim to build a simple, secure platform that keeps everyone connected.",
+    "subtitle": "The story of the Al-Shuaibi family and our shared vision.",
+    "body": "The Al-Shuaibi family is a community that brings relatives and friends together in one place to follow news, occasions, and shared memories. We aim to build a simple, secure platform that keeps everyone connected.",
     "missionTitle": "Our mission",
     "missionBody": "Strengthen family communication, preserve heritage, and make it easier to share occasions and everyday moments."
   },

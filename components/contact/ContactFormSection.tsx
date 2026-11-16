@@ -186,7 +186,7 @@ export function ContactFormSection({
   }
 
   const mapBlock = data.mapEmbedUrl ? (
-    <div className="relative aspect-[4/3] w-full min-h-[220px] overflow-hidden rounded-[16px] sm:aspect-auto sm:min-h-[300px] sm:rounded-[20px] lg:min-h-full lg:h-full">
+    <div className="relative aspect-[4/3] w-full min-h-[280px] overflow-hidden rounded-[16px] sm:min-h-[360px] sm:rounded-[20px] lg:aspect-auto lg:h-full lg:min-h-[420px]">
       <iframe
         title={t.mapTitle}
         src={data.mapEmbedUrl}
@@ -205,7 +205,7 @@ export function ContactFormSection({
       style={{ backgroundColor: FORM_BG }}
     >
       <h2
-        className="text-[24px] font-bold leading-tight sm:text-[32px] md:text-[36px] lg:text-[46px]"
+        className="text-[22px] font-bold leading-tight sm:text-[28px]"
         style={{ color: TITLE }}
       >
         {data.title}
@@ -344,10 +344,7 @@ export function ContactFormSection({
   );
 
   return (
-    <section
-      id="contact-form-section"
-      className="overflow-hidden rounded-[16px] bg-white px-3 py-6 sm:rounded-[20px] sm:px-6 sm:py-12 lg:px-10 lg:py-20"
-    >
+    <div id="contact-form-section" className="mt-8">
       <div
         dir="ltr"
         className={`mx-auto grid w-full max-w-7xl grid-cols-1 items-stretch gap-4 sm:gap-6 xl:max-w-[1400px] ${
@@ -366,6 +363,6 @@ export function ContactFormSection({
           </>
         )}
       </div>
-    </section>
+    </div>
   );
 }

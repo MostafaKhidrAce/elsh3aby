@@ -1,6 +1,6 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ??
-  "https://family-box.aksapp.com/api/v1";
+  "https://api.alshuaibi.family/api/v1";
 
 export function apiUrl(path: string): string {
   const base = API_BASE_URL.replace(/\/$/, "");

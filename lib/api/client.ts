@@ -1,6 +1,15 @@
 import { API_BASE_URL, apiUrl } from "@/lib/api/config";
 import type { Locale } from "@/lib/i18n/config";
 
+type ApiPaginator = {
+  current_page?: number;
+  per_page?: number;
+  pages?: number;
+  total?: number;
+  prev_page_url?: string | null;
+  next_page_url?: string | null;
+};
+
 type ApiEnvelope<T> = {
   data?: T;
   message?: string;
@@ -8,8 +17,32 @@ type ApiEnvelope<T> = {
   errors?: Record<string, string[] | string>;
   meta?: ApiMeta;
   links?: ApiLinks;
+  paginator?: ApiPaginator;
   categories?: unknown;
 };
+
+function envelopeMeta(json: ApiEnvelope<unknown>): ApiMeta | undefined {
+  if (json.meta && (json.meta.current_page || json.meta.last_page || json.meta.total)) {
+    return json.meta;
+  }
+  const paginator = json.paginator;
+  if (!paginator) return json.meta;
+  return {
+    current_page: paginator.current_page,
+    last_page: paginator.pages,
+    per_page: paginator.per_page,
+    total: paginator.total,
+  };
+}
+
+function envelopeLinks(json: ApiEnvelope<unknown>): ApiLinks | undefined {
+  if (json.links) return json.links;
+  if (!json.paginator) return undefined;
+  return {
+    prev: json.paginator.prev_page_url,
+    next: json.paginator.next_page_url,
+  };
+}
 
 export type ApiMeta = {
   current_page?: number;
@@ -142,8 +175,8 @@ export async function apiGetPage<T>(
   assertOk(response, json);
   return {
     data: json.data as T,
-    meta: json.meta,
-    links: json.links,
+    meta: envelopeMeta(json),
+    links: envelopeLinks(json),
     message: json.message,
   };
 }

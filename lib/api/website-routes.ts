@@ -4,19 +4,19 @@ import type { WebsiteMenuLink } from "@/lib/api/website";
 const PATH_MAP: Record<string, string> = {
   "/contact": "/home/contact-us",
   "/about": "/home/about",
-  "/news": "/home#news-section",
-  "/events": "/home#events-section",
+  "/news": "/home/news",
+  "/events": "/home/events",
   "/store": "/dashboard/market",
   "/bookings": "/dashboard/booking",
 };
 
 const LABEL_MAP: Record<string, string> = {
-  "family news": "/home#news-section",
-  events: "/home#events-section",
+  "family news": "/home/news",
+  events: "/home/events",
   "qaisariya market": "/dashboard/market",
   "family venue booking": "/dashboard/booking",
-  "أخبار العائلة": "/home#news-section",
-  "الفعاليات والمناسبات": "/home#events-section",
+  "أخبار العائلة": "/home/news",
+  "الفعاليات والمناسبات": "/home/events",
   "سوق القيصرية": "/dashboard/market",
   "حجز دار مناسبات العائلة": "/dashboard/booking",
 };

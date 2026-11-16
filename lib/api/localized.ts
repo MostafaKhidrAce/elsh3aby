@@ -128,7 +128,7 @@ export function resolveCmsImage(url: string | null | undefined, fallback: string
 }
 
 const STORAGE_ORIGIN = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://family-box.aksapp.com/api/v1"
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? "https://api.alshuaibi.family/api/v1"
 ).replace(/\/api\/v1\/?$/, "");
 
 export function extractImageUrls(value: unknown): string[] {

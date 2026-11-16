@@ -35,14 +35,14 @@ export function HeroNav({
   const links = [
     { href: `/${locale}/home`, label: t.home, match: "home" as const },
     {
-      href: `/${locale}/home#events-section`,
+      href: `/${locale}/home/events`,
       label: t.events,
-      match: "hash" as const,
+      match: "events" as const,
     },
     {
-      href: `/${locale}/home#news-section`,
+      href: `/${locale}/home/news`,
       label: t.news,
-      match: "hash" as const,
+      match: "news" as const,
     },
     {
       href: `/${locale}/home#about-section`,
@@ -50,9 +50,9 @@ export function HeroNav({
       match: "hash" as const,
     },
     {
-      href: `/${locale}/home#services-section`,
+      href: `/${locale}/dashboard/market`,
       label: t.store,
-      match: "hash" as const,
+      match: "store" as const,
     },
     {
       href: `/${locale}/home/contact-us`,
@@ -61,13 +61,14 @@ export function HeroNav({
     },
   ];
 
-  function isActive(match: "home" | "hash" | "contact") {
+  function isActive(match: "home" | "events" | "news" | "hash" | "store" | "contact") {
     if (match === "home") {
       return pathname === `/${locale}/home` || pathname === `/${locale}/home/`;
     }
-    if (match === "contact") {
-      return pathname.includes("/contact-us");
-    }
+    if (match === "events") return pathname.includes("/home/events");
+    if (match === "news") return pathname.includes("/home/news");
+    if (match === "store") return pathname.includes("/dashboard/market");
+    if (match === "contact") return pathname.includes("/contact-us");
     return false;
   }
 

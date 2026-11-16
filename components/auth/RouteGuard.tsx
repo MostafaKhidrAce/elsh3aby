@@ -83,6 +83,7 @@ export function RouteGuard({ locale, dictionary, children }: RouteGuardProps) {
           title={t.title}
           description={t.description}
           loginLabel={t.login}
+          nextPath={routeBlocked ? pathname : undefined}
           dismissible={!routeBlocked && manualOpen}
           onClose={closeLoginRequired}
         />

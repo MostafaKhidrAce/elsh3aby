@@ -17,6 +17,7 @@ import type {
   WebsiteMenuLink,
   WebsiteSocial,
 } from "@/lib/api/website";
+import { swapOccasionTitle, normalizeLabel } from "@/lib/api/event-display";
 import { websiteMenuHref } from "@/lib/api/website-routes";
 
 const FALLBACK_HERO_BACKGROUNDS = [
@@ -25,10 +26,14 @@ const FALLBACK_HERO_BACKGROUNDS = [
   "/backgrounds/hero-section-bg-3.jpg",
 ];
 
-export type HomeHeroView = {
-  backgrounds: string[];
+export type HomeHeroSlideView = {
+  background: string;
   title: string;
   subtitle: string;
+};
+
+export type HomeHeroView = {
+  slides: HomeHeroSlideView[];
   cta1: { label: string; url: string | null };
   cta2: { label: string };
   stats: { id: string | number; label: string; value: number; moreThan: string }[];
@@ -150,16 +155,44 @@ export function toHomeHeroView(
 ): HomeHeroView {
   const t = dictionary.home;
   const hero = home?.hero;
-  const backgrounds = toImageList(hero?.background_url);
+  const sharedTitle = pickLocalized(locale, hero?.title_ar, hero?.title_en, t.title);
+  const sharedSubtitle = pickLocalized(
+    locale,
+    hero?.description_ar,
+    hero?.description_en,
+    t.subtitle,
+  );
+  const fromSlides = (hero?.slides ?? [])
+    .map((slide, index) => {
+      const background = resolveCmsImage(
+        slide.background_url,
+        FALLBACK_HERO_BACKGROUNDS[index % FALLBACK_HERO_BACKGROUNDS.length],
+      );
+      const title = pickLocalized(locale, slide.title_ar, slide.title_en, sharedTitle);
+      const subtitle = pickLocalized(
+        locale,
+        slide.description_ar,
+        slide.description_en,
+        sharedSubtitle,
+      );
+      if (!slide.background_url && !title && !subtitle) return null;
+      return { background, title, subtitle };
+    })
+    .filter((slide): slide is HomeHeroSlideView => slide !== null);
+  const legacyBackgrounds = toImageList(hero?.background_url);
+  const slides =
+    fromSlides.length > 0
+      ? fromSlides
+      : (legacyBackgrounds.length > 0
+          ? legacyBackgrounds
+          : [...FALLBACK_HERO_BACKGROUNDS]
+        ).map((background) => ({
+          background,
+          title: sharedTitle,
+          subtitle: sharedSubtitle,
+        }));
   return {
-    backgrounds: backgrounds.length > 0 ? backgrounds : [...FALLBACK_HERO_BACKGROUNDS],
-    title: pickLocalized(locale, hero?.title_ar, hero?.title_en, t.title),
-    subtitle: pickLocalized(
-      locale,
-      hero?.description_ar,
-      hero?.description_en,
-      t.subtitle,
-    ),
+    slides,
     cta1: {
       label: pickLocalized(
         locale,
@@ -238,6 +271,17 @@ export function toServicesView(
       imageUrl: resolveCmsImage(item.image_url, ""),
     })) ?? [];
 
+  const suggestions = cards.find((card) => /اقتراح|suggestion/i.test(card.title));
+  const booking = cards.find((card) => /حجز|booking/i.test(card.title));
+  if (
+    suggestions &&
+    booking &&
+    normalizeLabel(suggestions.description) === normalizeLabel(booking.description) &&
+    suggestions.description.trim()
+  ) {
+    suggestions.description = t.suggestionsDescription;
+  }
+
   return {
     eyebrow: pickLocalized(
       locale,
@@ -268,14 +312,19 @@ export function toEventsView(
 } {
   const t = dictionary.home.eventsSection;
   const section = home?.events_section;
-  const events = (section?.items ?? []).map((item) => ({
+  const events = (section?.items ?? []).map((item) => {
+    const heading = swapOccasionTitle(
+      pickLocalized(locale, item.title_ar, item.title_en),
+      pickLocalized(
+        locale,
+        item.description_ar ?? item.body_ar,
+        item.description_en ?? item.body_en,
+      ),
+    );
+    return {
     id: item.id,
-    title: pickLocalized(locale, item.title_ar, item.title_en),
-    description: pickLocalized(
-      locale,
-      item.description_ar ?? item.body_ar,
-      item.description_en ?? item.body_en,
-    ),
+    title: heading.title,
+    description: heading.description,
     date: formatEventDate(
       item.date ?? item.start_date ?? item.event_date ?? item.published_at,
     ),
@@ -287,7 +336,8 @@ export function toEventsView(
         item.location_en ?? item.address_en,
       ),
     imageUrl: resolveCmsImage(item.image_url || item.icon, ""),
-  }));
+  };
+  });
 
   return {
     title: pickLocalized(locale, section?.title_ar, section?.title_en, t.title),
@@ -506,13 +556,8 @@ export function toContactInfoView(
   );
   return {
     heroTitle,
-    eyebrow: heroTitle,
-    title: pickLocalized(
-      locale,
-      contact?.hero?.title_ar,
-      contact?.hero?.title_en,
-      t.infoSection.title,
-    ),
+    eyebrow: "",
+    title: "",
     description: pickLocalized(
       locale,
       contact?.intro_ar,
@@ -527,6 +572,26 @@ export function toContactInfoView(
       contact?.cards?.address_en,
     ),
   };
+}
+
+function embedSrc(value: string): string {
+  const match = value.match(/src\s*=\s*["']([^"']+)["']/i);
+  return (match?.[1] || value).trim();
+}
+
+function contactMapEmbed(
+  locale: Locale,
+  contact: WebsiteContactData | null,
+): string {
+  const provided = (contact?.map_embed_url || contact?.cards?.map_embed_url || "").trim();
+  if (provided) return embedSrc(provided);
+  const address = pickLocalized(
+    locale,
+    contact?.cards?.address_ar,
+    contact?.cards?.address_en,
+  );
+  if (!address) return "";
+  return `https://maps.google.com/maps?q=${encodeURIComponent(address)}&hl=${locale}&z=15&output=embed`;
 }
 
 export function toContactFormView(
@@ -554,7 +619,7 @@ export function toContactFormView(
       contact?.form?.intro_en,
       t.description,
     ),
-    mapEmbedUrl: contact?.map_embed_url || "",
+    mapEmbedUrl: contactMapEmbed(locale, contact),
     submitEndpoint: contact?.form?.submit_endpoint ?? null,
     messageTypes: types,
   };
@@ -573,11 +638,20 @@ export function toFooterView(
           label: pickLocalized(locale, link.label_ar, link.label_en),
         }))
       : [
-          { href: `/${locale}/home#news-section`, label: t.menu.news },
-          { href: `/${locale}/home#events-section`, label: t.menu.events },
-          { href: `/${locale}/home#services-section`, label: t.menu.store },
-          { href: `/${locale}/home#services-section`, label: t.menu.booking },
+          { href: `/${locale}/home/news`, label: t.menu.news },
+          { href: `/${locale}/home/events`, label: t.menu.events },
+          { href: `/${locale}/dashboard/market`, label: t.menu.store },
+          { href: `/${locale}/dashboard/booking`, label: t.menu.booking },
         ];
+  const extraLinks = [
+    { href: `/${locale}/home/contact-us`, label: t.contactCta },
+    { href: `/${locale}/home/mission`, label: t.menu.mission },
+    { href: `/${locale}/home/goals`, label: t.menu.goals },
+  ];
+  const seen = new Set(menuLinks.map((link) => link.href));
+  for (const link of extraLinks) {
+    if (!seen.has(link.href)) menuLinks.push(link);
+  }
 
   return {
     title: pickLocalized(

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { HeroNav } from "@/components/layout/HeroNav";
 import { AnimatedStat } from "@/components/home/AnimatedStat";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
@@ -56,6 +56,16 @@ function CtaContent({
 
 export function HomeHero({ locale, dictionary, data }: HomeHeroProps) {
   const [activeSlide, setActiveSlide] = useState(0);
+  const touchStartX = useRef<number | null>(null);
+
+  const slides = data.slides;
+  const slide = slides[activeSlide] ?? slides[0];
+
+  function showSlide(offset: number) {
+    const count = slides.length;
+    if (count < 2) return;
+    setActiveSlide((current) => (current + offset + count) % count);
+  }
   const cta1 = data.cta1.url ? (
     <a
       href={data.cta1.url}
@@ -85,14 +95,27 @@ export function HomeHero({ locale, dictionary, data }: HomeHeroProps) {
 
   return (
     <div>
-      <section className="relative overflow-hidden rounded-[1.25rem] text-white sm:rounded-[1.75rem]">
-        {data.backgrounds.map((src, index) => (
+      <section
+        className="relative overflow-hidden rounded-[1.25rem] text-white sm:rounded-[1.75rem]"
+        onTouchStart={(event) => {
+          touchStartX.current = event.changedTouches[0]?.clientX ?? null;
+        }}
+        onTouchEnd={(event) => {
+          const start = touchStartX.current;
+          touchStartX.current = null;
+          if (start == null) return;
+          const delta = (event.changedTouches[0]?.clientX ?? start) - start;
+          if (Math.abs(delta) < 40) return;
+          showSlide(delta < 0 ? 1 : -1);
+        }}
+      >
+        {slides.map((item, index) => (
           <div
-            key={`${src}-${index}`}
+            key={`${item.background}-${index}`}
             className={`absolute inset-0 bg-cover bg-center transition-opacity duration-700 ease-in-out ${
               index === activeSlide ? "opacity-100" : "opacity-0"
             }`}
-            style={{ backgroundImage: `url(${src})` }}
+            style={{ backgroundImage: `url(${item.background})` }}
             aria-hidden
           />
         ))}
@@ -101,7 +124,7 @@ export function HomeHero({ locale, dictionary, data }: HomeHeroProps) {
           style={{
             background:
               "radial-gradient(50% 50% at 50% 50%, #145452 0%, #002827 100%)",
-            opacity: 0.92,
+            opacity: 0.55,
           }}
           aria-hidden
         />
@@ -111,10 +134,10 @@ export function HomeHero({ locale, dictionary, data }: HomeHeroProps) {
 
           <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center justify-center px-3 pb-5 pt-8 text-center sm:px-5 sm:pt-10 lg:px-6 lg:pb-6 lg:pt-14">
             <h1 className="max-w-4xl text-2xl font-bold leading-snug sm:text-3xl md:text-4xl lg:text-[3.25rem]">
-              {data.title}
+              {slide?.title}
             </h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-white/90 sm:mt-4 sm:text-base sm:leading-7 lg:mt-5 lg:text-lg lg:leading-8">
-              {data.subtitle}
+              {slide?.subtitle}
             </p>
 
             <div className="mt-6 flex flex-col items-stretch gap-3 sm:mt-8 sm:flex-row sm:items-center sm:justify-center lg:mt-10">
@@ -143,9 +166,15 @@ export function HomeHero({ locale, dictionary, data }: HomeHeroProps) {
               ))}
             </div>
 
-            <a
-              href="#after-hero"
-              className="mt-8 inline-flex h-10 w-6 items-center justify-center rounded-full border border-white/70 transition hover:bg-white/10 lg:mt-10 lg:h-12 lg:w-7"
+            <button
+              type="button"
+              onClick={() => {
+                document.getElementById("after-hero")?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "start",
+                });
+              }}
+              className="mt-8 inline-flex h-12 w-12 items-center justify-center rounded-full border border-white/70 transition hover:bg-white/10 lg:mt-10"
               aria-label="Scroll down"
             >
               <Image
@@ -155,7 +184,7 @@ export function HomeHero({ locale, dictionary, data }: HomeHeroProps) {
                 height={14}
                 className="h-3.5 w-3.5"
               />
-            </a>
+            </button>
           </div>
         </div>
       </section>
@@ -165,7 +194,7 @@ export function HomeHero({ locale, dictionary, data }: HomeHeroProps) {
         role="tablist"
         aria-label="Hero background slides"
       >
-        {data.backgrounds.map((_, index) => {
+        {slides.map((_, index) => {
           const isActive = index === activeSlide;
           return (
             <button

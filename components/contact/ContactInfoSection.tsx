@@ -19,28 +19,16 @@ export function ContactInfoSection({
   const t = dictionary.contact.infoSection;
   const isAr = locale === "ar";
 
-  const textBlock = (
+  const textBlock = data.description ? (
     <div dir={isAr ? "rtl" : "ltr"}>
       <p
-        className="text-[16px] font-medium sm:text-[18px] lg:text-[20px]"
-        style={{ color: TEXT }}
-      >
-        {data.eyebrow}
-      </p>
-      <h2
-        className="mt-2 text-[28px] font-bold leading-tight sm:text-[36px] lg:text-[42px]"
-        style={{ color: TEXT }}
-      >
-        {data.title}
-      </h2>
-      <p
-        className="mt-4 max-w-xl text-[15px] font-normal leading-7 sm:text-[17px] sm:leading-8 lg:text-[18px] lg:leading-9"
+        className="max-w-3xl text-[15px] font-normal leading-7 sm:text-[17px] sm:leading-8 lg:text-[18px] lg:leading-9"
         style={{ color: TEXT }}
       >
         {data.description}
       </p>
     </div>
-  );
+  ) : null;
 
   const cardsBlock = (
     <div
@@ -114,26 +102,9 @@ export function ContactInfoSection({
   );
 
   return (
-    <section
-      id="contact-info-section"
-      className="overflow-hidden rounded-[20px] bg-white px-3 py-8 sm:px-6 sm:py-12 lg:px-10 lg:py-20"
-    >
-      <div
-        dir="ltr"
-        className="mx-auto grid w-full max-w-7xl items-center gap-8 xl:max-w-[1400px] lg:grid-cols-2 lg:gap-12 xl:gap-16"
-      >
-        {isAr ? (
-          <>
-            {cardsBlock}
-            {textBlock}
-          </>
-        ) : (
-          <>
-            {textBlock}
-            {cardsBlock}
-          </>
-        )}
-      </div>
-    </section>
+    <div id="contact-info-section" className="mx-auto flex w-full max-w-7xl flex-col gap-8 xl:max-w-[1400px]">
+      {textBlock}
+      {cardsBlock}
+    </div>
   );
 }
